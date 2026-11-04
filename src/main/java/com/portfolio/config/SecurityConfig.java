@@ -1,3 +1,6 @@
+/* SecurityConfig.java usually defines the app’s security rules: how users authenticate and which requests they’re allowed to access. */
+/* SecurityConfig.java may configure login, logout, password handling, session behavior, and URL access rules. */
+
 package com.portfolio.config;
 
 import com.portfolio.application.UserAccountService;
@@ -59,11 +62,19 @@ public class SecurityConfig {
     }
 
     @Bean
+    /* SecurityFilterChain is a Spring Security type that represents the security filters applied to incoming HTTP requests. */
+    /* That method configures how requests are secured—for example, which URLs require login, how form login and logout work, and whether CSRF protection is enabled. Spring uses the returned filter chain to process requests. */
+
+
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             SecurityContextRepository securityContextRepository,
             CsrfTokenRepository csrfTokenRepository) throws Exception {
-        http
+
+        /* This configures Spring Security’s HttpSecurity object to use securityContextRepository for saving and loading the current user’s security context.
+           Here, context -> ... is a lambda that configures the security-context settings. This setting is part of building the app’s SecurityFilterChain. */
+
+            http
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
