@@ -47,7 +47,35 @@ Spring also scans subpackages under each listed package. This annotation is typi
 
 /* This code customizes Spring MVC so controller methods can receive the authenticated user as a method argument.
    WebConfig implements WebMvcConfigurer lets this class customize Spring MVC configuration. */
-public class WebConfig implements WebMvcConfigurer {
+/* Added a responsive Folio sign-in page and connected it to the existing Spring MVC app. Visiting / now serves the page, which fetches a CSRF token and submits credentials to /api/auth/login, with feedback for invalid credentials and rate limits.
+The page is in [login.html](D:/Users/Admin/portfolio-management-system/src/main/resources/static/login.html), with its styling and behavior in assets/login.css and assets/login.js */
+
+   /* This adds a simple route in Spring MVC for the site’s root URL */
+   public class WebConfig implements WebMvcConfigurer {
+/* @Override means Java checks that this method matches a method declared in a parent class or interface. Here, WebMvcConfigurer declares the addResourceHandlers hook that this method implements. */
+    @Override
+    /* addViewControllers(...) registers URL routes that don’t need a Java controller method. */
+    /* registry.addViewController("/") matches requests to /. */
+    /* .setViewName("forward:/login.html") forwards that request internally to login.html */
+    public void addViewControllers(ViewControllerRegistry registry) {
+        registry.addViewController("/").setViewName("forward:/login.html")
+    }
+
+    @Override
+    /* This tells Spring MVC where to find the login page and its static assets, such as CSS and JavaScript. */
+    /* addResourceHandlers(...) is a Spring MVC configuration hook for serving static files. */
+    /* addResourceHandler("/login.html", "/assets/**") sets the URL patterns Spring should handle */
+    /* /login.html matches the login page. */
+    /* /assets/** matches files under /assets/, such as /assets/login.css */
+    /* addResourceLocations(...) tells Spring to look for those files inside the app’s classpath resources:- classpath:/static/ points to src/main/resources/static/.
+     classpath:/static/assets/ points to its assets subfolder. */
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/login.html", "/assets/**");
+        .addResourceLocations("classpath:/static/", "classpath:/static/assets/");
+    }
+
+
+
     @Override
 /* addArgumentResolvers(...) is a Spring MVC hook for registering custom handlers that resolve controller method parameters. */
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {

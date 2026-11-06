@@ -1,0 +1,72 @@
+/* Your selected CSS is a compact stylesheet for the login page. It sets up the page’s colors, layout, responsive behavior, and component styling. */
+/* :root { ... } defines site-wide defaults and reusable CSS variables, such as --green and --muted. */
+/* * { box-sizing: border-box } makes element dimensions include their padding and borders. */
+/*body removes the browser’s default margin and sets a minimum page size. */
+/* .page-shell creates the main two-column layout: the visual panel on the left and the sign-in form on the right. */
+/* .visual-panel, .preview-card, and the chart selectors style the dark green portfolio illustration and its sample chart. */
+/* .form-panel, .input-wrap, .submit-button, and related selectors style the login form. */
+/* @media (max-width: 900px) adjusts the two-column layout for narrower screens. */
+/* @media (max-width: 680px) hides the decorative panel and gives the form a mobile-friendly layout. */
+/* @media (prefers-reduced-motion: reduce) turns off transitions for people who have asked their device to reduce motion. */
+
+
+:root {
+font-family: "DM Sans", sans-serif;
+color: #202823;
+background: #f5f7f4;
+font-synthesis: none;
+/* Tells the browser to prioritize visual clarity and readability over rendering speed.
+Adjusts the spacing between individual character pairs (like Av or To) so text looks more balanced and natural. */
+text-rendering: optimizeLegibility;
+/* -webkit-font-smoothing: antialiased; is a browser-specific CSS setting that changes how text edges are rendered on some WebKit-based browsers, such as Safari.
+antialiased asks the browser to draw smoother-looking letter edges. The effect is subtle and varies by browser and operating system. It’s a visual preference, so the page still works if you remove it. */
+-webkit-font-smoothing: antialiased;
+font-optical-sizing: auto;
+font-weight: 400;
+--green: #256d4c;
+}
+
+*{
+box-sizing:border-box
+}
+
+body {
+margin: 0;
+min-width: 320px;
+min-height: 100vh;
+ }
+
+ /* A page-shell is a CSS class or ID selector used to style the outer container, wrapper, or structural frame of a login page. */
+.page-shell {
+min-height: 100vh;
+display: grid;
+/* This CSS rule defines a two-column grid layout where each column has a flexible width but a strict minimum size. */
+/* grid-template-columns: This property defines the number and width of columns inside a CSS Grid container. Because there are two values separated by a space, it creates exactly two columns.
+ minmax(min, max): This function sets a strict boundary for a column's width. The column can never shrink smaller than the min value, but it can expand up to the max value if there is extra space.
+ • fr (Fraction Unit): This represents a fraction of the leftover, available space in the grid container. */
+
+grid-template-columns: minmax(460px,1.04fr) minmax(490px,.96fr);
+gap: 18px;
+padding: 18px;
+}
+
+.visual-panel {
+position: relative;
+overflow: hidden;
+min-height: calc(100vh - 36px);
+padding : 35px 5.5% 28px;
+border-radius: 19px;
+background: radial-gradient(ellipse at 74% 0%, #2e674d 0, transparent 40%),
+linear-gradient(145deg, #214d38 0%, #163d2c 48%, #102f22 100%),
+color: fff;
+}
+
+
+
+
+
+
+
+
+
+
