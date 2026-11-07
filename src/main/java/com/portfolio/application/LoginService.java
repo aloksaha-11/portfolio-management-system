@@ -37,7 +37,7 @@ public class LoginService {
         ThrottleState accountState = throttles.lockBucket(ACCOUNT, accountKey);
         ThrottleState ipState = throttles.lockBucket(IP, ipKey);
         if (ipState.blockActive() || (!accountState.windowExpired() && accountState.delayActive())) {
-            return LoginResult.limited();
+            return LoginResult.rateLimited();
         }
 
         try {
@@ -61,7 +61,7 @@ public class LoginService {
             return new LoginResult(null, false);
         }
 
-        public static LoginResult limited() {
+        public static LoginResult rateLimited() {
             return new LoginResult(null, true);
         }
 

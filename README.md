@@ -20,10 +20,10 @@ Deploy `target/portfolio-management-system.war` to your servlet container. The A
 
 The MySQL service is available at `localhost:3306`. Apply `src/main/resources/db/schema.sql` manually to the target database before using persistence. Configure the application process with these environment variables; keep the password out of source control:
 
-- `PORTFOLIO_DB_URL`, in the form `jdbc:mysql://localhost:3306/{database_name}`; replace `{database_name}` with the actual MySQL database/schema name
+- `PORTFOLIO_DB_URL`, in the form `jdbc:mysql://localhost:3306/portfolio_management_system`; replace `{database_name}` with the actual MySQL database/schema name
 - `PORTFOLIO_DB_USERNAME`, set to `root` for this MySQL account
-- `PORTFOLIO_DB_PASSWORD`
-- `PORTFOLIO_THROTTLE_HMAC_KEY`, a stable random secret of at least 32 bytes used to hash account and client IP throttle keys
+- `PORTFOLIO_DB_PASSWORD`, for this MySQL account
+- `PORTFOLIO_THROTTLE_HMAC_KEY`, set to `6F4597BA15A2369530218FB1565D3DD066107EF818BB5C4B90040743AA18FAA1` a stable random secret of at least 32 bytes used to hash account and client IP throttle keys
 - `APP_ENV=production` in production deployments to mark session and CSRF cookies `Secure`
 
 Set the MySQL server default time zone to IST (`+05:30`) so new MySQL sessions inherit it. For a persistent server setting, run `SET PERSIST time_zone = '+05:30';` as a MySQL administrator, or add `default-time-zone=+05:30` under `[mysqld]` in the MySQL option file (`my.ini` on Windows) and restart MySQL. `SET GLOBAL time_zone = '+05:30';` changes the running server until restart. These global settings apply to new sessions; reconnect existing clients after changing them.

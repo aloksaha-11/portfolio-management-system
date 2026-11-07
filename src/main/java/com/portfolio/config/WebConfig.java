@@ -58,7 +58,7 @@ public class WebConfig implements WebMvcConfigurer {
     /* registry.addViewController("/") matches requests to /. */
     /* .setViewName("forward:/login.html") forwards that request internally to login.html */
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("forward:/login.html");
+        registry.addViewController("/").setViewName("forward:/index.html");
     }
 
     @Override
@@ -70,8 +70,8 @@ public class WebConfig implements WebMvcConfigurer {
     /* addResourceLocations(...) tells Spring to look for those files inside the app’s classpath resources:- classpath:/static/ points to src/main/resources/static/.
      classpath:/static/assets/ points to its assets subfolder. */
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/login.html", "/assets/**")
-                .addResourceLocations("classpath:/static/", "classpath:/static/assets/");
+        registry.addResourceHandler("/index.html", "/login.html", "/assets/**")
+                .addResourceLocations("classpath:/static/");
     }
 
     @Override

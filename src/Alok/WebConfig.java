@@ -58,7 +58,7 @@ The page is in [login.html](D:/Users/Admin/portfolio-management-system/src/main/
     /* registry.addViewController("/") matches requests to /. */
     /* .setViewName("forward:/login.html") forwards that request internally to login.html */
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("forward:/login.html")
+        registry.addViewController("/").setViewName("forward:/index.html")
     }
 
     @Override
