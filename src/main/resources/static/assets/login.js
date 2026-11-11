@@ -21,10 +21,10 @@
 
     button.disabled = true;
     button.classList.add('loading');
-    button.querySelector('span').textContent = 'Signing in…';
+    button.querySelector('span').textContent = 'Logging in…';
     try {
       const csrfResponse = await fetch('api/auth/csrf', { headers: { Accept: 'application/json' } });
-      if (!csrfResponse.ok) throw new Error('We could not start a secure sign-in. Please try again.');
+      if (!csrfResponse.ok) throw new Error('We could not start a secure login. Please try again.');
       const csrf = await csrfResponse.json();
       const response = await fetch('api/auth/login', {
         method: 'POST',
@@ -36,7 +36,7 @@
       if (!response.ok) {
         if (response.status === 429) throw new Error('Too many attempts. Please wait a little and try again.');
         if (response.status === 401) throw new Error('That email and password combination doesn’t match.');
-        throw new Error(result.message || 'Sign-in failed. Please try again.');
+        throw new Error(result.message || 'Login failed. Please try again.');
       }
       window.location.assign('dashboard.html');
     } catch (error) {
@@ -44,7 +44,7 @@
     } finally {
       button.disabled = false;
       button.classList.remove('loading');
-      button.querySelector('span').textContent = 'Sign in';
+      button.querySelector('span').textContent = 'Login';
     }
   });
 

@@ -104,7 +104,7 @@
 
   async function logout() {
     const button = document.querySelector('#logout-button');
-    await withBusy(button, 'Signing out…', async () => {
+    await withBusy(button, 'Logging out…', async () => {
       try {
         const csrf = await getCsrf();
         const response = await fetch('api/auth/logout', {
@@ -112,10 +112,14 @@
           credentials: 'same-origin',
           headers: { [csrf.headerName]: csrf.token }
         });
-        if (!response.ok) throw await responseError(response, 'Sign out failed. Please try again.');
-        window.location.replace('login.html');
+        if (!response.ok) throw await responseError(response, 'Logout failed. Please try again.');
+        const sessionCheck = await fetch('api/auth/me', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        if (sessionCheck.status !== 401) {
+          throw new Error('Your session is still active. Please try signing out again.');
+        }
+        window.location.replace(new URL('login.html', document.baseURI));
       } catch (error) {
-        showMessage(error.message || 'Sign out failed. Please try again.');
+        showMessage(error.message || 'Logout failed. Please try again.');
       }
     });
   }
@@ -264,7 +268,7 @@
     const response = await fetch(url, { credentials: 'same-origin', ...options });
     if (response.status === 401) {
       window.location.replace('login.html');
-      throw new Error('Your session has ended. Please sign in again.');
+      throw new Error('Your session has ended. Please log in again.');
     }
     if (!response.ok) throw await responseError(response, 'Something went wrong. Please try again.');
     if (response.status === 204) return null;

@@ -37,11 +37,11 @@
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        if (response.status === 409) throw new Error('An account with this email already exists. Try signing in instead.');
+        if (response.status === 409) throw new Error('An account with this email already exists. Try logging in instead.');
         throw new Error(result.message || 'Account creation failed. Please try again.');
       }
 
-      setMessage('Your account is ready. Sign in to get started.', 'success');
+      setMessage('Your account is ready. Login to get started.', 'success');
       button.querySelector('span').textContent = 'Account created';
       button.disabled = true;
       form.querySelectorAll('input').forEach((input) => { input.disabled = true; });
