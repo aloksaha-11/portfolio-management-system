@@ -70,8 +70,10 @@ public class WebConfig implements WebMvcConfigurer {
     /* addResourceLocations(...) tells Spring to look for those files inside the app’s classpath resources:- classpath:/static/ points to src/main/resources/static/.
      classpath:/static/assets/ points to its assets subfolder. */
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/index.html", "/login.html", "/assets/**")
+        registry.addResourceHandler("/index.html", "/login.html", "/signup.html", "/dashboard.html")
                 .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations("classpath:/static/assets/");
     }
 
     @Override

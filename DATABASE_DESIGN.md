@@ -80,6 +80,23 @@ Constraints and indexes:
 
 The application computes `normalized_investment_name`; MySQL stores it and enforces uniqueness. Store both text columns with `utf8mb4` and a binary collation: identity comes from application normalization, not MySQL's locale-dependent case/accent rules. The display name remains unchanged apart from trimming. Ticker is not part of duplicate identity because it is optional. The 512-character normalized column keeps the `(portfolio_id, normalized_investment_name)` index within MySQL 8.4's InnoDB index-key limit under `utf8mb4`.
 
+## `bse_daily_prices`
+
+Stores BSE cash-equity Bhav Copy closing prices by trading date. The whole daily equity file is retained so the dashboard can compare a user's cost basis with the latest available BSE close and keep a daily price history.
+
+| Column | Type | Rules |
+|---|---|---|
+| `trade_date` | `DATE` | Required; BSE trading date |
+| `security_code` | `VARCHAR(12)` | Required; BSE `FinInstrmId` |
+| `isin` | `CHAR(12)` | Optional ISIN from the exchange file |
+| `symbol` | `VARCHAR(32)` | Optional BSE `TckrSymb`, stored uppercase |
+| `series` | `VARCHAR(4)` | Required BSE security series |
+| `open_price`, `high_price`, `low_price`, `close_price`, `previous_close` | `DECIMAL(19,6)` | Rupee prices; close must be greater than zero |
+| `volume` | `BIGINT` | Optional reported traded quantity |
+| `imported_at` | `TIMESTAMP(6)` | Last time this row was imported |
+
+The primary key `(trade_date, security_code, series)` makes re-imports idempotent. Secondary indexes support lookup by BSE code or symbol. Price rows are shared market data and do not belong to individual users. A holding's optional ticker can contain a BSE symbol or BSE security code to match a quote.
+
 ## `login_throttle`
 
 Stores persistent account and IP failure buckets so a process restart cannot reset throttling. The same table shape supports both bucket types.
@@ -132,5 +149,6 @@ Behavior encoded by the application around this table:
 | `portfolios` | User-owned INR containers | FK to `users`; user listing index |
 | `holdings` | Current investment positions | FK to `portfolios`; unique normalized name per portfolio |
 | `login_throttle` | Persistent login failure buckets | Unique bucket type and HMAC key |
+| `bse_daily_prices` | BSE equity end-of-day closes | Unique trading date, security code, and series |
 
-No transaction, market-price, recommendation, or audit-history tables are needed for the agreed first milestone; those concepts are out of scope in `REQUIREMENTS.md`.
+Transaction history, intraday/live prices, recommendations, and audit history remain out of scope in `REQUIREMENTS.md`.

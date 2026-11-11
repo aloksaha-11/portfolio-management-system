@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f4">
+  <meta name="description" content="Create your Folio account and bring your investments into focus.">
+  <title>Create your account · Folio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/login.css">
+</head>
+<body>
+  <main class="page-shell">
+    <section class="visual-panel" aria-label="Portfolio overview">
+      <a class="brand brand-light" href="./" aria-label="Folio home"><span class="brand-mark">f</span><span>folio</span></a>
+      <div class="visual-copy">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> YOUR MONEY, IN FOCUS</span>
+        <h1>Make room<br>for a clearer<br>financial picture.</h1>
+        <p>Start with one simple place to organize and understand the investments you own.</p>
+      </div>
+      <div class="preview-card" aria-hidden="true">
+        <div class="preview-top"><div><span class="muted-label">YOUR PORTFOLIO</span><strong>One view. More clarity.</strong></div><span class="period">FOLIO <span>↗</span></span></div>
+        <div class="chart-wrap"><div class="chart-labels"><span>GROW</span><span>TRACK</span><span>REVIEW</span></div><svg class="chart" viewBox="0 0 500 150" preserveAspectRatio="none" role="presentation"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#9bd3b7" stop-opacity=".3"/><stop offset="1" stop-color="#9bd3b7" stop-opacity="0"/></linearGradient></defs><path d="M0 122 C28 114 30 98 62 104 S96 118 124 91 S164 99 188 72 S222 88 250 63 S285 78 310 55 S349 65 373 38 S407 55 430 31 S467 43 500 13 L500 150 L0 150Z" fill="url(#area)"/><path d="M0 122 C28 114 30 98 62 104 S96 118 124 91 S164 99 188 72 S222 88 250 63 S285 78 310 55 S349 65 373 38 S407 55 430 31 S467 43 500 13" fill="none" stroke="#9bd3b7" stroke-width="3" vector-effect="non-scaling-stroke"/></svg></div>
+        <div class="chart-dates"><span>PLAN</span><span>ADD</span><span>FOLLOW</span><span>GROW</span><span>REVIEW</span><span>REPEAT</span></div>
+        <div class="preview-bottom"><span><i class="legend-dot"></i> A thoughtful start</span><span class="preview-note">Your portfolio, in focus</span></div>
+      </div>
+      <div class="visual-footer"><span>BUILT FOR A LONGER VIEW</span><span>01 <b>—</b> 03</span></div>
+    </section>
+
+    <section class="form-panel">
+      <div class="mobile-brand"><a class="brand" href="./" aria-label="Folio home"><span class="brand-mark">f</span><span>folio</span></a></div>
+      <div class="form-content">
+        <div class="welcome-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <p class="kicker">A FRESH START</p>
+        <h2>Create your account</h2>
+        <p class="form-intro">Set up your secure Folio account in a few steps.</p>
+
+        <form id="signup-form" novalidate>
+          <label for="signup-email">Email address</label>
+          <div class="input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="m4.5 7 7.5 5.5L19.5 7"/></svg><input id="signup-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="254" required></div>
+          <div class="password-heading"><label for="signup-password">Password</label><span class="text-link">8 characters minimum</span></div>
+          <div class="input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="signup-password" name="password" type="password" autocomplete="new-password" placeholder="Create a password" required></div>
+          <div class="password-heading"><label for="confirm-password">Confirm password</label></div>
+          <div class="input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Enter your password again" required></div>
+          <p class="form-message" id="signup-message" role="alert" aria-live="polite"></p>
+          <button class="submit-button" id="signup-button" type="submit"><span>Create account</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+        </form>
+        <p class="signup-note">Already have an account? <a class="text-link" href="login.html">Sign in</a></p>
+        <div class="secure-note"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Your information is encrypted and secure</span></div>
+      </div>
+      <footer class="form-footer"><span>© 2026 Folio</span><a href="mailto:support@example.com">Need help?</a></footer>
+    </section>
+  </main>
+  <script src="assets/signup.js" defer></script>
+</body>
+</html>

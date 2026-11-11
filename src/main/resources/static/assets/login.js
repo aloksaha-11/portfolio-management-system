@@ -14,11 +14,6 @@
     event.preventDefault();
     setMessage('Password recovery is not available yet. Please contact support for help.', 'error');
   });
-  document.querySelector('#signup-link').addEventListener('click', (event) => {
-    event.preventDefault();
-    setMessage('Account creation is available through the registration API. The sign-up screen is coming soon.', 'error');
-  });
-
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     setMessage('');
@@ -28,10 +23,10 @@
     button.classList.add('loading');
     button.querySelector('span').textContent = 'Signing in…';
     try {
-      const csrfResponse = await fetch('/api/auth/csrf', { headers: { Accept: 'application/json' } });
+      const csrfResponse = await fetch('api/auth/csrf', { headers: { Accept: 'application/json' } });
       if (!csrfResponse.ok) throw new Error('We could not start a secure sign-in. Please try again.');
       const csrf = await csrfResponse.json();
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('api/auth/login', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', [csrf.headerName]: csrf.token },
@@ -43,7 +38,7 @@
         if (response.status === 401) throw new Error('That email and password combination doesn’t match.');
         throw new Error(result.message || 'Sign-in failed. Please try again.');
       }
-      setMessage(`Signed in as ${result.email}. Your account is ready.`, 'success');
+      window.location.assign('dashboard.html');
     } catch (error) {
       setMessage(error.message || 'Something went wrong. Please try again.');
     } finally {

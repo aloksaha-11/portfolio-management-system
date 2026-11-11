@@ -1,0 +1,9 @@
+.stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.price-as-of{margin-left:8px;color:#96a098;font-size:9px;font-weight:500;letter-spacing:0}
+.field small{display:block;margin-top:5px;color:#89958c;font-size:9px;line-height:1.4}
+.holding-row{grid-template-columns:minmax(145px,1.3fr) minmax(65px,.55fr) minmax(90px,.8fr) minmax(90px,.8fr) minmax(100px,.9fr) minmax(100px,.9fr)}
+.holding-row.header{grid-template-columns:minmax(145px,1.3fr) minmax(65px,.55fr) minmax(90px,.8fr) minmax(90px,.8fr) minmax(100px,.9fr) minmax(100px,.9fr)}
+.column-units,.column-average{white-space:nowrap}
+.column-close,.column-market,.column-cost{white-space:nowrap}
+@media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.holding-list{overflow-x:auto}.holding-row,.holding-row.header{min-width:760px}}
+@media(max-width:540px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card{min-width:0}.stat-card strong{font-size:17px}.holding-row,.holding-row.header{min-width:620px}.column-units,.column-average{display:none}}

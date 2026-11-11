@@ -5,7 +5,7 @@
 
 ## Goal
 
-Let a user keep a simple record of what they own in each investment portfolio. The first release focuses on portfolio organization and position quantities; it does not provide investment advice or calculate live market value.
+Let a user keep a simple record of what they own in each investment portfolio. The application organizes positions and uses the latest available BSE end-of-day close to estimate market value; it does not provide investment advice or intraday prices.
 
 ## Confirmed decisions
 
@@ -38,6 +38,7 @@ Investment names and optional ticker/reference codes are entered by the user. Th
 - Registration uses an email address and password. The system rejects malformed or already-registered email addresses with a useful validation error.
 - Authentication uses Spring Security configured for the existing Spring MVC application; no Spring Boot dependency is introduced.
 - Registration rejects passwords shorter than 8 characters.
+- BSE end-of-day equity closing prices are imported from the exchange's final daily Bhav Copy and stored for historical lookup. No broker account or paid real-time feed is required for this daily data.
 - Passwords are hashed with Argon2id and a unique salt. Passwords are never logged or returned by the API.
 - Authenticated browser sessions use server-side sessions. Login rotates the session ID; logout invalidates the session. State-changing requests require CSRF protection.
 - Count failed logins by normalized email, including attempts for email addresses that are not registered, so the response does not reveal whether an account exists. After 5 failures for an email within 15 minutes, increase the wait before each further attempt exponentially from 1 second, capped at 30 seconds. A successful login resets that email's failure counter.
@@ -76,6 +77,15 @@ Investment names and optional ticker/reference codes are entered by the user. Th
 - An empty portfolio displays a helpful message and an action to add the first holding.
 - The API returns a stable, documented response shape and appropriate HTTP status codes for success, invalid input, missing resources, and unauthenticated/unauthorized access.
 
+### 4. Import and display BSE end-of-day prices
+
+- Import the final BSE equity Bhav Copy after market close on weekdays, retry once later in the evening, and attempt to catch up after application startup.
+- Keep one daily row per BSE security code and series; re-importing a date updates existing rows instead of duplicating them.
+- Match holdings to prices by the optional ticker field, which accepts a BSE ticker symbol or BSE security code.
+- Show the latest available BSE close, its trade date, and the resulting estimated market value (`units_owned × close_price`) in the dashboard.
+- Preserve cost basis separately. A holding with no matching BSE symbol/code must show that its price is unavailable rather than substituting a different instrument.
+- Market prices are shared exchange data. They are not owned by a portfolio or account.
+
 ## Data and validation rules
 
 - Monetary values use decimal arithmetic, never binary floating-point arithmetic.
@@ -98,7 +108,7 @@ Investment names and optional ticker/reference codes are entered by the user. Th
 
 ## Out of scope for this milestone
 
-- Live prices, market valuation, price history, or foreign-exchange conversion.
+- Intraday/live prices, automated BSE symbol discovery, or foreign-exchange conversion.
 - Buy/sell transaction ledger, realized/unrealized gains, dividends, or tax reporting.
 - Investment recommendations, trading, brokerage connections, or performance comparisons.
 - Shared portfolios, multiple user roles, or organization-level access.

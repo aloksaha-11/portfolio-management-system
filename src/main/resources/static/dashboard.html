@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f4">
+  <meta name="description" content="Your Folio portfolio overview.">
+  <title>Your portfolio · Folio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/dashboard.css">
+  <link rel="stylesheet" href="assets/dashboard-market.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Folio home"><span class="brand-mark">f</span><span>folio</span></a>
+    <div class="account-actions"><span class="account-avatar" aria-hidden="true">f</span><span id="account-email" class="account-email">Loading account…</span><button id="logout-button" class="logout-button" type="button">Sign out</button></div>
+  </header>
+
+  <main class="dashboard-shell">
+    <section class="welcome-row">
+      <div><p class="eyebrow">YOUR MONEY, IN FOCUS</p><h1>Good to have you here<span>.</span></h1><p class="welcome-copy">Your investments have a home. Start with a portfolio and build a clearer view over time.</p></div>
+      <div class="welcome-art" aria-hidden="true"><svg viewBox="0 0 180 120"><path d="M16 95h150M25 82l32-25 23 13 34-38 24 13 25-24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M132 21h31v31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="57" cy="57" r="5" fill="#c5e2cf"/><circle cx="114" cy="32" r="5" fill="#c5e2cf"/></svg></div>
+    </section>
+
+    <section class="stat-grid" aria-label="Portfolio summary">
+      <article class="stat-card"><span class="stat-icon icon-green" aria-hidden="true">↗</span><span class="stat-label">PORTFOLIOS</span><strong id="portfolio-count">—</strong><span class="stat-caption">Your organized investment spaces</span></article>
+      <article class="stat-card"><span class="stat-icon icon-blue" aria-hidden="true">▤</span><span class="stat-label">INVESTMENTS</span><strong id="holding-count">—</strong><span class="stat-caption">Holdings recorded across portfolios</span></article>
+      <article class="stat-card"><span class="stat-icon icon-green" aria-hidden="true">₹</span><span class="stat-label">LATEST MARKET VALUE</span><strong id="market-value">—</strong><span id="market-value-caption" class="stat-caption">Using the latest available BSE close</span></article>
+      <article class="stat-card"><span class="stat-icon icon-gold" aria-hidden="true">₹</span><span class="stat-label">TOTAL COST BASIS</span><strong id="cost-basis">—</strong><span class="stat-caption">Based on your recorded purchase prices</span></article>
+    </section>
+
+    <section class="content-card" aria-labelledby="portfolio-heading">
+      <div class="section-heading"><div><p class="eyebrow">KEEP EVERYTHING TOGETHER</p><h2 id="portfolio-heading">Your portfolios</h2></div><button class="primary-button" id="show-create" type="button"><span aria-hidden="true">＋</span> New portfolio</button></div>
+      <form id="create-form" class="create-form" hidden>
+        <label for="portfolio-name">Give your portfolio a name</label><div class="create-controls"><input id="portfolio-name" name="name" maxlength="100" placeholder="For example, Long-term investments" required><button class="primary-button" type="submit">Create portfolio</button><button class="cancel-button" id="cancel-create" type="button">Cancel</button></div>
+      </form>
+      <p id="dashboard-message" class="dashboard-message" role="status" aria-live="polite"></p>
+      <div id="portfolio-list" class="portfolio-grid"></div>
+      <div id="empty-state" class="empty-state" hidden><div class="empty-illustration" aria-hidden="true"><svg viewBox="0 0 64 64"><rect x="9" y="13" width="46" height="39" rx="8"/><path d="M20 26h24M20 34h16M20 42h10"/></svg></div><h3>Your first portfolio starts here</h3><p>Create a portfolio to organize the investments you want to follow.</p><button class="primary-button" id="empty-create" type="button">Create your first portfolio</button></div>
+    </section>
+
+    <section id="holdings-section" class="content-card holdings-card" aria-labelledby="holdings-heading" hidden>
+      <div class="section-heading holdings-heading"><div><p class="eyebrow">PORTFOLIO DETAILS <span id="price-as-of" class="price-as-of">BSE closes loading</span></p><h2 id="holdings-heading">Holdings</h2></div><button id="add-holding-toggle" class="secondary-button" type="button">＋ Add investment</button></div>
+      <form id="holding-form" class="holding-form" hidden>
+        <div class="field"><label for="investment-name">Investment name</label><input id="investment-name" name="investmentName" maxlength="255" placeholder="Company or fund name" required></div>
+        <div class="field"><label for="ticker">BSE symbol or code <span>(optional)</span></label><input id="ticker" name="ticker" maxlength="32" placeholder="e.g. RELIANCE or 500325"><small>Used to match the latest BSE closing price.</small></div>
+        <div class="field"><label for="units">Units owned</label><input id="units" name="unitsOwned" type="number" min="0.00000001" step="0.00000001" placeholder="0" required></div>
+        <div class="field"><label for="purchase-price">Average purchase price (₹)</label><input id="purchase-price" name="averagePurchasePrice" type="number" min="0" step="0.0001" placeholder="0.00" required></div>
+        <div class="holding-actions"><button class="primary-button" type="submit">Save investment</button><button class="cancel-button" id="cancel-holding" type="button">Cancel</button></div>
+      </form>
+      <div id="holding-list" class="holding-list"></div>
+      <p id="holdings-empty" class="holdings-empty" hidden>No investments recorded yet. Add your first holding to get started.</p>
+    </section>
+    <footer class="dashboard-footer"><span>© 2026 Folio</span><span>A clearer view of what you own.</span></footer>
+  </main>
+  <script src="assets/dashboard.js" defer></script>
+</body>
+</html>

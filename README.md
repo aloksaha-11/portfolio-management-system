@@ -30,6 +30,12 @@ Set the MySQL server default time zone to IST (`+05:30`) so new MySQL sessions i
 
 The schema script sets its own session time zone to IST, and the JDBC connection pool also sets every application connection's session time zone to IST (`+05:30`). MySQL `TIMESTAMP` columns are returned and displayed according to the session time zone. The application does not create or migrate tables automatically. Do not commit database passwords or the HMAC key.
 
+## BSE end-of-day prices
+
+The application imports the final BSE cash-equity UDiFF Bhav Copy at 6:15 PM and 7:15 PM IST on weekdays and makes a catch-up attempt after startup. It saves daily OHLC, closing price, prior close, volume, symbol, ISIN, security code, and series in `bse_daily_prices`. Repeat imports are idempotent. The dashboard matches a holding's optional ticker against its BSE symbol or security code and calculates an estimated market value from the latest available close. Enter a BSE symbol (for example, `RELIANCE`) or BSE security code (for example, `500325`) in the ticker field. Unmatched holdings remain without a displayed market value.
+
+For a fresh database, apply `src/main/resources/db/schema.sql`. For an existing database, apply `src/main/resources/db/add_bse_daily_prices.sql` once before deploying the updated WAR. The importer requires the application server to reach BSE's public Bhav Copy download. BSE publishes the final daily equity file through its [Bhav Copy reports](https://www.bseindia.com/markets/MarketInfo/BhavCopy.aspx); this is end-of-day data, not an intraday feed.
+
 ## API workflows
 
 All request and response bodies use JSON. Obtain a CSRF token with `GET /api/auth/csrf`, then send the returned token in its named header (normally `X-XSRF-TOKEN`) for every `POST`, `PUT`, and `DELETE` request. The matching `XSRF-TOKEN` cookie must also be sent.
