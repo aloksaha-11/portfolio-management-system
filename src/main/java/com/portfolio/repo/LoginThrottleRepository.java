@@ -55,6 +55,17 @@ public class LoginThrottleRepository {
                 """, nextCount, expired, delaySeconds, delaySeconds, block, type, keyHash);
     }
 
+    public boolean recordAttempt(String type, byte[] keyHash, ThrottleState previous, int limit) {
+        int nextCount = previous.windowExpired() ? 1 : Math.addExact(previous.failureCount(), 1);
+        jdbc.update("""
+                UPDATE login_throttle
+                SET failure_count = ?,
+                    window_started_at = IF(?, CURRENT_TIMESTAMP(6), window_started_at)
+                WHERE bucket_type = ? AND bucket_key_hash = ?
+                """, nextCount, previous.windowExpired(), type, keyHash);
+        return nextCount <= limit;
+    }
+
     public void resetAccount(String type, byte[] keyHash) {
         jdbc.update("""
                 UPDATE login_throttle

@@ -27,14 +27,14 @@ public class HoldingController {
     @GetMapping("/api/portfolios/{portfolioId}/holdings")
     public List<Holding> list(
             @AuthenticationPrincipal UserPrincipal user,
-            @PathVariable long portfolioId) {
+            @PathVariable("portfolioId") long portfolioId) {
         return holdings.list(user.userId(), portfolioId);
     }
 
     @PostMapping("/api/portfolios/{portfolioId}/holdings")
     public ResponseEntity<Holding> add(
             @AuthenticationPrincipal UserPrincipal user,
-            @PathVariable long portfolioId,
+            @PathVariable("portfolioId") long portfolioId,
             @RequestBody HoldingService.HoldingInput request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(holdings.add(user.userId(), portfolioId, request));
@@ -43,7 +43,7 @@ public class HoldingController {
     @PutMapping("/api/holdings/{holdingId}")
     public Holding update(
             @AuthenticationPrincipal UserPrincipal user,
-            @PathVariable long holdingId,
+            @PathVariable("holdingId") long holdingId,
             @RequestBody HoldingService.HoldingInput request) {
         return holdings.update(user.userId(), holdingId, request);
     }
@@ -51,7 +51,7 @@ public class HoldingController {
     @DeleteMapping("/api/holdings/{holdingId}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal UserPrincipal user,
-            @PathVariable long holdingId) {
+            @PathVariable("holdingId") long holdingId) {
         holdings.delete(user.userId(), holdingId);
         return ResponseEntity.noContent().build();
     }

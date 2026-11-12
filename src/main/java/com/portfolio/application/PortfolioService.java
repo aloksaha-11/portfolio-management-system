@@ -5,6 +5,7 @@ import java.util.List;
 import com.portfolio.persistence.HoldingRepository;
 import com.portfolio.persistence.PortfolioRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,16 @@ public class PortfolioService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_portfolio_name",
                     "Portfolio name must contain 1 to 100 non-whitespace characters.");
         }
-        long id = portfolios.create(userId, name);
+        if (portfolios.existsByOwnerAndName(userId, name)) {
+            throw duplicateName();
+        }
+        long id;
+        try {
+            id = portfolios.create(userId, name);
+        } catch (DuplicateKeyException exception) {
+            // The unique database constraint handles simultaneous create requests.
+            throw duplicateName();
+        }
         return getPortfolio(userId, id);
     }
 
@@ -68,5 +78,10 @@ public class PortfolioService {
 
     private static ApiException notFound() {
         return new ApiException(HttpStatus.NOT_FOUND, "portfolio_not_found", "Portfolio was not found.");
+    }
+
+    private static ApiException duplicateName() {
+        return new ApiException(HttpStatus.CONFLICT, "duplicate_portfolio_name",
+                "You already have a portfolio with this name. Choose a different name.");
     }
 }

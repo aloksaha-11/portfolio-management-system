@@ -6,6 +6,7 @@ import java.time.Instant;
 public record Holding(
         long holdingId,
         long portfolioId,
+        String investmentType,
         String investmentName,
         String ticker,
         BigDecimal unitsOwned,

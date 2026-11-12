@@ -11,15 +11,21 @@ public final class UserPrincipal implements UserDetails {
     private final long userId;
     private final String email;
     private final String passwordHash;
+    private final long sessionVersion;
 
     public UserPrincipal(UserAccount account) {
         this.userId = account.userId();
         this.email = account.email();
         this.passwordHash = account.passwordHash();
+        this.sessionVersion = account.sessionVersion();
     }
 
     public long userId() {
         return userId;
+    }
+
+    public long sessionVersion() {
+        return sessionVersion;
     }
 
     @Override

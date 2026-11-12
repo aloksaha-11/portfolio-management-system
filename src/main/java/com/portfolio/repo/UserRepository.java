@@ -15,7 +15,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class UserRepository {
     private static final RowMapper<UserAccount> USER_MAPPER = (result, row) -> new UserAccount(
-            result.getLong("user_id"), result.getString("email"), result.getString("password_hash"));
+            result.getLong("user_id"), result.getString("email"), result.getString("password_hash"),
+            result.getLong("session_version"));
 
     private final JdbcTemplate jdbc;
 
@@ -25,10 +26,21 @@ public class UserRepository {
 
     public Optional<UserAccount> findByEmail(String email) {
         List<UserAccount> users = jdbc.query(
-                "SELECT user_id, email, password_hash FROM users WHERE email = ?",
+                "SELECT user_id, email, password_hash, session_version FROM users WHERE email = ?",
                 USER_MAPPER,
                 email);
         return users.stream().findFirst();
+    }
+
+    public long sessionVersion(long userId) {
+        List<Long> versions = jdbc.query("SELECT session_version FROM users WHERE user_id = ?",
+                (result, row) -> result.getLong("session_version"), userId);
+        return versions.isEmpty() ? -1 : versions.getFirst();
+    }
+
+    public int updatePasswordHashAndRevokeSessions(long userId, String passwordHash) {
+        return jdbc.update("UPDATE users SET password_hash = ?, session_version = session_version + 1 WHERE user_id = ?",
+                passwordHash, userId);
     }
 
     public long create(String email, String passwordHash) {

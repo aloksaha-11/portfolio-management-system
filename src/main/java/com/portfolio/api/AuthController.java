@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.portfolio.application.ApiException;
 import com.portfolio.application.LoginService;
+import com.portfolio.application.PasswordResetService;
 import com.portfolio.application.UserAccountService;
 import com.portfolio.application.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final UserAccountService accounts;
     private final LoginService loginService;
+    private final PasswordResetService passwordResets;
     private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
     private final SecurityContextRepository securityContextRepository;
     private final CsrfTokenRepository csrfTokenRepository;
@@ -37,11 +39,13 @@ public class AuthController {
     public AuthController(
             UserAccountService accounts,
             LoginService loginService,
+            PasswordResetService passwordResets,
             SessionAuthenticationStrategy sessionAuthenticationStrategy,
             SecurityContextRepository securityContextRepository,
             CsrfTokenRepository csrfTokenRepository) {
         this.accounts = accounts;
         this.loginService = loginService;
+        this.passwordResets = passwordResets;
         this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
         this.securityContextRepository = securityContextRepository;
         this.csrfTokenRepository = csrfTokenRepository;
@@ -59,6 +63,23 @@ public class AuthController {
         }
         long userId = accounts.register(request.email(), request.password());
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("userId", userId, "email", UserAccountService.normalizeEmail(request.email())));
+    }
+
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<?> requestPasswordReset(
+            @RequestBody(required = false) PasswordResetRequest request,
+            HttpServletRequest httpRequest) {
+        passwordResets.requestReset(request == null ? null : request.email(), httpRequest.getRemoteAddr());
+        return ResponseEntity.accepted().body(Map.of("message",
+                "If an account exists for that email, password reset instructions will be sent shortly."));
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<?> confirmPasswordReset(@RequestBody(required = false) PasswordResetConfirmRequest request) {
+        passwordResets.resetPassword(
+                request == null ? null : request.token(),
+                request == null ? null : request.newPassword());
+        return ResponseEntity.ok(Map.of("message", "Your password has been reset. You can now log in."));
     }
 
     @PostMapping("/login")
@@ -103,5 +124,11 @@ public class AuthController {
     }
 
     public record LoginRequest(String email, String password) {
+    }
+
+    public record PasswordResetRequest(String email) {
+    }
+
+    public record PasswordResetConfirmRequest(String token, String newPassword) {
     }
 }

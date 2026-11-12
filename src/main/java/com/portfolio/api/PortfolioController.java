@@ -41,14 +41,14 @@ public class PortfolioController {
     @GetMapping("/{portfolioId}")
     public PortfolioDetails get(
             @AuthenticationPrincipal UserPrincipal user,
-            @PathVariable long portfolioId) {
+            @PathVariable("portfolioId") long portfolioId) {
         return portfolios.get(user.userId(), portfolioId);
     }
 
     @DeleteMapping("/{portfolioId}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal UserPrincipal user,
-            @PathVariable long portfolioId) {
+            @PathVariable("portfolioId") long portfolioId) {
         portfolios.delete(user.userId(), portfolioId);
         return ResponseEntity.noContent().build();
     }

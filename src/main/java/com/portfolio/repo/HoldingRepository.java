@@ -22,6 +22,7 @@ public class HoldingRepository {
         return new Holding(
                 result.getLong("holding_id"),
                 result.getLong("portfolio_id"),
+                result.getString("investment_type"),
                 result.getString("investment_name"),
                 result.getString("ticker"),
                 units,
@@ -37,22 +38,24 @@ public class HoldingRepository {
         this.jdbc = jdbc;
     }
 
-    public long create(long portfolioId, String name, String normalizedName, String ticker,
+    public long create(long userId, long portfolioId, String investmentType, String name, String normalizedName, String ticker,
             BigDecimal units, BigDecimal averagePrice) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             PreparedStatement statement = connection.prepareStatement("""
                     INSERT INTO holdings
-                        (portfolio_id, investment_name, normalized_investment_name, ticker,
+                        (owner_user_id, portfolio_id, investment_type, investment_name, normalized_investment_name, ticker,
                          units_owned, average_purchase_price)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """, Statement.RETURN_GENERATED_KEYS);
-            statement.setLong(1, portfolioId);
-            statement.setString(2, name);
-            statement.setString(3, normalizedName);
-            statement.setString(4, ticker);
-            statement.setBigDecimal(5, units);
-            statement.setBigDecimal(6, averagePrice);
+            statement.setLong(1, userId);
+            statement.setLong(2, portfolioId);
+            statement.setString(3, investmentType);
+            statement.setString(4, name);
+            statement.setString(5, normalizedName);
+            statement.setString(6, ticker);
+            statement.setBigDecimal(7, units);
+            statement.setBigDecimal(8, averagePrice);
             return statement;
         }, keyHolder);
         Number key = keyHolder.getKey();
@@ -62,9 +65,33 @@ public class HoldingRepository {
         return key.longValue();
     }
 
+    public boolean existsWithSameDetails(long userId, String investmentType, String normalizedName, String ticker,
+            BigDecimal units, BigDecimal averagePrice, Long excludingHoldingId) {
+        String sql = """
+                SELECT EXISTS (
+                    SELECT 1 FROM holdings h
+                    JOIN portfolios p ON p.portfolio_id = h.portfolio_id
+                    WHERE p.user_id = ?
+                      AND h.normalized_investment_name = ?
+                      AND h.investment_type = ?
+                      AND LOWER(COALESCE(h.ticker, '')) COLLATE utf8mb4_0900_ai_ci
+                          = LOWER(COALESCE(?, '')) COLLATE utf8mb4_0900_ai_ci
+                      AND h.units_owned = ?
+                      AND h.average_purchase_price = ?
+                """ + (excludingHoldingId == null ? "" : " AND h.holding_id <> ?") + "\n                )";
+        Boolean exists;
+        if (excludingHoldingId == null) {
+            exists = jdbc.queryForObject(sql, Boolean.class, userId, normalizedName, investmentType, ticker, units, averagePrice);
+        } else {
+            exists = jdbc.queryForObject(sql, Boolean.class, userId, normalizedName, investmentType, ticker, units,
+                    averagePrice, excludingHoldingId);
+        }
+        return Boolean.TRUE.equals(exists);
+    }
+
     public List<Holding> findAllByPortfolioAndOwner(long portfolioId, long userId) {
         return jdbc.query("""
-                SELECT h.holding_id, h.portfolio_id, h.investment_name, h.ticker,
+                SELECT h.holding_id, h.portfolio_id, h.investment_type, h.investment_name, h.ticker,
                        h.units_owned, h.average_purchase_price, h.created_at, h.updated_at
                 FROM holdings h
                 JOIN portfolios p ON p.portfolio_id = h.portfolio_id
@@ -75,7 +102,7 @@ public class HoldingRepository {
 
     public Optional<Holding> findByIdAndOwner(long holdingId, long userId) {
         List<Holding> results = jdbc.query("""
-                SELECT h.holding_id, h.portfolio_id, h.investment_name, h.ticker,
+                SELECT h.holding_id, h.portfolio_id, h.investment_type, h.investment_name, h.ticker,
                        h.units_owned, h.average_purchase_price, h.created_at, h.updated_at
                 FROM holdings h
                 JOIN portfolios p ON p.portfolio_id = h.portfolio_id
@@ -84,15 +111,15 @@ public class HoldingRepository {
         return results.stream().findFirst();
     }
 
-    public int updateByIdAndOwner(long holdingId, long userId, String name, String normalizedName,
+    public int updateByIdAndOwner(long holdingId, long userId, String investmentType, String name, String normalizedName,
             String ticker, BigDecimal units, BigDecimal averagePrice) {
         return jdbc.update("""
                 UPDATE holdings h
                 JOIN portfolios p ON p.portfolio_id = h.portfolio_id
-                SET h.investment_name = ?, h.normalized_investment_name = ?, h.ticker = ?,
+                SET h.investment_type = ?, h.investment_name = ?, h.normalized_investment_name = ?, h.ticker = ?,
                     h.units_owned = ?, h.average_purchase_price = ?
                 WHERE h.holding_id = ? AND p.user_id = ?
-                """, name, normalizedName, ticker, units, averagePrice, holdingId, userId);
+                """, investmentType, name, normalizedName, ticker, units, averagePrice, holdingId, userId);
     }
 
     public int deleteByIdAndOwner(long holdingId, long userId) {

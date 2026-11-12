@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
 @ComponentScan(basePackages = {"com.portfolio.application", "com.portfolio.persistence"})
-@Import({DatabaseConfig.class, SecurityConfig.class})
+@Import({DatabaseConfig.class, SecurityConfig.class, MailConfig.class})
 @EnableScheduling
 public class RootConfig {
 }

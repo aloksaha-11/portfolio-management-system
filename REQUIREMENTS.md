@@ -116,5 +116,5 @@ Investment names and optional ticker/reference codes are entered by the user. Th
 
 ## Notes before implementation
 
-- Email ownership verification and account recovery require an email delivery flow and are outside this first requirements draft.
+- Password recovery uses a one-time, expiring email link, stores only a token hash, avoids revealing whether an account exists, and invalidates previous sessions after a successful reset.
 - The initial throttling thresholds are reviewed and approved for the MVP. Keep the per-account delay and temporary IP limit configurable so they can be tuned after deployment.

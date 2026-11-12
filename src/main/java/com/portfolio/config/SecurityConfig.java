@@ -4,6 +4,8 @@
 package com.portfolio.config;
 
 import com.portfolio.application.UserAccountService;
+import com.portfolio.persistence.UserRepository;
+import com.portfolio.security.CredentialVersionFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +18,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -69,7 +72,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             SecurityContextRepository securityContextRepository,
-            CsrfTokenRepository csrfTokenRepository) throws Exception {
+            CsrfTokenRepository csrfTokenRepository,
+            UserRepository userRepository) throws Exception {
 
         /* This configures Spring Security’s HttpSecurity object to use securityContextRepository for saving and loading the current user’s security context.
            Here, context -> ... is a lambda that configures the security-context settings. This setting is part of building the app’s SecurityFilterChain. */
@@ -81,9 +85,10 @@ public class SecurityConfig {
                         .sessionFixation(fixation -> fixation.changeSessionId()))
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/login.html", "/signup.html", "/dashboard.html", "/assets/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/login.html", "/signup.html", "/dashboard.html", "/forgot-password.html", "/reset-password.html", "/assets/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api", "/api/health", "/api/auth/csrf").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
+                                "/api/auth/password-reset/request", "/api/auth/password-reset/confirm").permitAll()
                         .anyRequest().authenticated())
                 .requestCache(cache -> cache.disable())
                 .exceptionHandling(exceptions -> exceptions
@@ -97,6 +102,7 @@ public class SecurityConfig {
                             response.setContentType("application/json");
                             response.getWriter().write("{\"error\":\"access_denied\"}");
                         }))
+                .addFilterAfter(new CredentialVersionFilter(userRepository), SecurityContextHolderFilter.class)
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .invalidateHttpSession(true)

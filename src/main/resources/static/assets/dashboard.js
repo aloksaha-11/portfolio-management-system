@@ -6,20 +6,39 @@
   const createForm = document.querySelector('#create-form');
   const createName = document.querySelector('#portfolio-name');
   const holdingForm = document.querySelector('#holding-form');
+  const companyName = document.querySelector('#company-name');
+  const tickerSelect = document.querySelector('#ticker');
+  const holdingMessage = document.querySelector('#holding-message');
   const holdingList = document.querySelector('#holding-list');
   const holdingsEmpty = document.querySelector('#holdings-empty');
   const holdingsSection = document.querySelector('#holdings-section');
+  const portfolioSelectWrap = document.querySelector('#portfolio-select-wrap');
+  const existingPortfolioSelect = document.querySelector('#existing-portfolio');
   let portfolios = [];
   let details = new Map();
   let quotesByKey = new Map();
   let selectedPortfolioId = null;
+  const companyCodes = new Map([
+    ['Reliance Industries Limited', '500325'],
+    ['Tata Consultancy Services Limited', '532540'],
+    ['Infosys Limited', '500209'],
+    ['ITC', '500875'],
+    ['State Bank of India', '500112']
+  ]);
+  const codeCompanies = new Map([...companyCodes].map(([company, code]) => [code, company]));
 
   document.querySelector('#show-create').addEventListener('click', showCreateForm);
   document.querySelector('#empty-create').addEventListener('click', showCreateForm);
   document.querySelector('#cancel-create').addEventListener('click', () => { createForm.hidden = true; });
   document.querySelector('#add-holding-toggle').addEventListener('click', () => { holdingForm.hidden = !holdingForm.hidden; });
   document.querySelector('#cancel-holding').addEventListener('click', () => { holdingForm.hidden = true; });
+  companyName.addEventListener('change', () => { tickerSelect.value = companyCodes.get(companyName.value) || ''; });
+  tickerSelect.addEventListener('change', () => { companyName.value = codeCompanies.get(tickerSelect.value) || ''; });
   document.querySelector('#logout-button').addEventListener('click', logout);
+  existingPortfolioSelect.addEventListener('change', () => {
+    const portfolioId = Number(existingPortfolioSelect.value);
+    if (Number.isSafeInteger(portfolioId) && portfolioId > 0) selectPortfolio(portfolioId);
+  });
   createForm.addEventListener('submit', createPortfolio);
   holdingForm.addEventListener('submit', addHolding);
 
@@ -72,7 +91,7 @@
 
   async function addHolding(event) {
     event.preventDefault();
-    clearMessage();
+    clearHoldingMessage();
     if (!holdingForm.reportValidity() || selectedPortfolioId === null) return;
     const submit = holdingForm.querySelector('[type="submit"]');
     await withBusy(submit, 'Saving…', async () => {
@@ -83,7 +102,8 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', [csrf.headerName]: csrf.token },
           body: JSON.stringify({
-            investmentName: data.get('investmentName').trim(),
+            investmentType: data.get('investmentType'),
+            companyName: data.get('companyName').trim(),
             ticker: data.get('ticker').trim() || null,
             unitsOwned: data.get('unitsOwned'),
             averagePurchasePrice: data.get('averagePurchasePrice')
@@ -95,9 +115,14 @@
         await loadMarketPrices();
         renderHoldings();
         updateSummary();
+        clearMessage();
         showMessage('Investment added to your portfolio.', 'success');
       } catch (error) {
-        showMessage(error.message || 'We could not save that investment. Please check the details and try again.');
+        const text = error.status === 409
+          ? 'A record with the same details already exists for the same holdings. Please add different details.'
+          : error.message || 'We could not save that investment. Please check the details and try again.';
+        holdingMessage.textContent = text;
+        holdingMessage.className = 'dashboard-message';
       }
     });
   }
@@ -127,6 +152,12 @@
   function renderPortfolios() {
     portfolioList.replaceChildren();
     emptyState.hidden = portfolios.length !== 0;
+    portfolioSelectWrap.hidden = portfolios.length === 0;
+    existingPortfolioSelect.replaceChildren(new Option('Choose a portfolio', ''));
+    portfolios.forEach((portfolio) => {
+      existingPortfolioSelect.add(new Option(portfolio.name, String(portfolio.portfolioId)));
+    });
+    existingPortfolioSelect.value = selectedPortfolioId === null ? '' : String(selectedPortfolioId);
     portfolios.forEach((portfolio) => {
       const card = document.createElement('button');
       card.type = 'button';
@@ -168,12 +199,13 @@
     const header = document.createElement('div');
     header.className = 'holding-row header';
     [
-      ['INVESTMENT', 'column-name'],
+      ['TYPE / COMPANY', 'column-name'],
       ['UNITS', 'column-units'],
       ['AVG. PRICE', 'column-average'],
       ['BSE CLOSE', 'column-close'],
       ['MARKET VALUE', 'column-market'],
-      ['COST BASIS', 'column-cost']
+      ['COST BASIS', 'column-cost'],
+      ['ACTIONS', 'column-actions']
     ].forEach(([label, className]) => {
       const cell = document.createElement('span');
       cell.className = className;
@@ -186,6 +218,10 @@
       row.className = 'holding-row';
       const name = document.createElement('span');
       name.className = 'holding-name';
+      const type = document.createElement('span');
+      type.className = 'holding-type';
+      type.textContent = holding.investmentType;
+      name.append(type);
       name.append(document.createTextNode(holding.investmentName));
       if (holding.ticker) {
         const ticker = document.createElement('span');
@@ -195,15 +231,45 @@
       }
       const quote = quoteFor(holding);
       const marketValue = quote ? Number(quote.closePrice) * Number(holding.unitsOwned) : null;
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'holding-delete';
+      deleteButton.textContent = 'Delete';
+      deleteButton.setAttribute('aria-label', `Delete ${holding.investmentName}`);
+      deleteButton.addEventListener('click', () => deleteHolding(holding, deleteButton));
       row.append(
         name,
         cell(formatNumber(holding.unitsOwned), 'column-units'),
         cell(formatCurrency(holding.averagePurchasePrice), 'column-average'),
         cell(quote ? formatCurrency(quote.closePrice) : '—', 'column-close'),
         cell(marketValue === null ? '—' : formatCurrency(marketValue), 'column-market'),
-        cell(formatCurrency(holding.costBasis), 'column-cost')
+        cell(formatCurrency(holding.costBasis), 'column-cost'),
+        deleteButton
       );
       holdingList.append(row);
+    });
+  }
+
+  async function deleteHolding(holding, button) {
+    if (!window.confirm(`Delete ${holding.investmentName} from this portfolio? This cannot be undone.`)) return;
+    clearHoldingMessage();
+    await withBusy(button, 'Deleting…', async () => {
+      try {
+        const csrf = await getCsrf();
+        await api(`api/holdings/${holding.holdingId}`, {
+          method: 'DELETE',
+          headers: { [csrf.headerName]: csrf.token }
+        });
+        details.set(selectedPortfolioId, await api(`api/portfolios/${selectedPortfolioId}`));
+        await loadMarketPrices();
+        renderHoldings();
+        updateSummary();
+        holdingMessage.textContent = 'Holding deleted.';
+        holdingMessage.className = 'dashboard-message success';
+      } catch (error) {
+        holdingMessage.textContent = error.message || 'We could not delete this holding. Please try again.';
+        holdingMessage.className = 'dashboard-message';
+      }
     });
   }
 
@@ -283,7 +349,9 @@
 
   async function responseError(response, fallback) {
     const result = await response.json().catch(() => ({}));
-    return new Error(result.message || fallback);
+    const error = new Error(result.message || fallback);
+    error.status = response.status;
+    return error;
   }
 
   async function withBusy(button, label, action) {
@@ -312,6 +380,11 @@
 
   function clearMessage() {
     showMessage('');
+  }
+
+  function clearHoldingMessage() {
+    holdingMessage.textContent = '';
+    holdingMessage.className = 'dashboard-message';
   }
 
   function cell(value, className = '') {

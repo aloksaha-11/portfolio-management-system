@@ -1,4 +1,4 @@
 package com.portfolio.application;
 
-public record UserAccount(long userId, String email, String passwordHash) {
+public record UserAccount(long userId, String email, String passwordHash, long sessionVersion) {
 }

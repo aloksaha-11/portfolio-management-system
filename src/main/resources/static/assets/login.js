@@ -10,10 +10,6 @@
     event.currentTarget.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
   });
 
-  document.querySelector('#forgot-link').addEventListener('click', (event) => {
-    event.preventDefault();
-    setMessage('Password recovery is not available yet. Please contact support for help.', 'error');
-  });
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     setMessage('');

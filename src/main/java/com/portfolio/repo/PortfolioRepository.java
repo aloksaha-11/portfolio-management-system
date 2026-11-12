@@ -45,6 +45,18 @@ public class PortfolioRepository {
         return key.longValue();
     }
 
+    public boolean existsByOwnerAndName(long userId, String name) {
+        Boolean exists = jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1 FROM portfolios
+                    WHERE user_id = ?
+                      AND LOWER(TRIM(name)) COLLATE utf8mb4_0900_ai_ci
+                          = LOWER(?) COLLATE utf8mb4_0900_ai_ci
+                )
+                """, Boolean.class, userId, name);
+        return Boolean.TRUE.equals(exists);
+    }
+
     public List<Portfolio> findAllByOwner(long userId) {
         return jdbc.query("""
                 SELECT portfolio_id, name, currency, created_at, updated_at
