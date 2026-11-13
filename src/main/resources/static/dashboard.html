@@ -31,6 +31,12 @@
       <article class="stat-card"><span class="stat-icon icon-gold" aria-hidden="true">₹</span><span class="stat-label">TOTAL COST BASIS</span><strong id="cost-basis">—</strong><span class="stat-caption">Based on your recorded purchase prices</span></article>
     </section>
 
+    <section class="content-card bse-data-card" aria-labelledby="bse-data-heading">
+      <div class="section-heading"><div><p class="eyebrow">BSE END-OF-DAY DATA</p><h2 id="bse-data-heading">Market prices: 12-Nov-2026</h2></div><div class="bse-data-tools"><input id="bse-data-search" class="bse-data-search" type="search" placeholder="Search company or symbol" aria-label="Search BSE company or symbol"><span id="bse-data-count" class="price-as-of">Loading prices…</span></div></div>
+      <p id="bse-data-message" class="dashboard-message" role="status" aria-live="polite">Loading BSE data…</p>
+      <div class="bse-data-scroll"><table class="bse-data-table"><thead><tr><th>Company / Symbol</th><th>Security code</th><th>Series</th><th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Previous close</th><th>Volume</th></tr></thead><tbody id="bse-data-body"></tbody></table></div>
+    </section>
+
     <section class="content-card" aria-labelledby="portfolio-heading">
       <div class="section-heading"><div><p class="eyebrow">KEEP EVERYTHING TOGETHER</p><h2 id="portfolio-heading">Your portfolios</h2></div><div class="portfolio-actions"><div id="portfolio-select-wrap" class="portfolio-select-wrap" hidden><label for="existing-portfolio">Select an existing portfolio</label><select id="existing-portfolio"><option value="">Choose a portfolio</option></select></div><button class="primary-button" id="show-create" type="button"><span aria-hidden="true">＋</span> New portfolio</button></div></div>
       <form id="create-form" class="create-form" hidden>
@@ -45,8 +51,8 @@
       <div class="section-heading holdings-heading"><div><p class="eyebrow">PORTFOLIO DETAILS <span id="price-as-of" class="price-as-of">BSE closes loading</span></p><h2 id="holdings-heading">Holdings</h2></div><button id="add-holding-toggle" class="secondary-button" type="button">＋ Add investment</button></div>
       <form id="holding-form" class="holding-form" hidden>
         <div class="field"><label for="investment-type">Investment type</label><select id="investment-type" name="investmentType" required><option value="" selected disabled>Select a type</option><option>Bonds</option><option>Commodities-Gold</option><option>Commodities-Silver</option><option>Equity</option><option>Intraday</option><option>Stocks/Shares</option></select></div>
-        <div class="field"><label for="company-name">Company name</label><select id="company-name" name="companyName" required><option value="" selected disabled>Select a company</option><option>Reliance Industries Limited</option><option>Tata Consultancy Services Limited</option><option>Infosys Limited</option><option>ITC</option><option>State Bank of India</option></select></div>
-        <div class="field"><label for="ticker">BSE symbol or code <span>(optional)</span></label><select id="ticker" name="ticker"><option value="" selected>Choose a company or leave blank</option><option value="500325">Reliance Industries — 500325</option><option value="532540">Tata Consultancy Services — 532540</option><option value="500209">Infosys — 500209</option><option value="500875">ITC — 500875</option><option value="500112">State Bank of India — 500112</option></select><small>Used to match the latest BSE closing price.</small></div>
+        <div class="field"><label for="company-name">Company name</label><input id="company-name" name="companyName" type="text" list="company-name-options" placeholder="Type to search companies" autocomplete="off" required><datalist id="company-name-options"></datalist><small>Type the first letters to filter BSE company names.</small></div>
+        <div class="field"><label for="ticker">BSE symbol or code <span>(optional)</span></label><select id="ticker" name="ticker"><option value="" selected>Choose a company or leave blank</option><option value="500325">Reliance Industries — 500325</option><option value="532540">Tata Consultancy Services — 532540</option><option value="500209">Infosys — 500209</option><option value="500875">ITC — 500875</option><option value="500112">State Bank of India — 500112</option></select><small id="ticker-help">Used to match the latest BSE closing price.</small></div>
         <div class="field"><label for="units">Units owned</label><input id="units" name="unitsOwned" type="number" min="0.00000001" step="0.00000001" placeholder="0" required></div>
         <div class="field"><label for="purchase-price">Average purchase price (₹)</label><input id="purchase-price" name="averagePurchasePrice" type="number" min="0" step="0.0001" placeholder="0.00" required></div>
         <div class="holding-actions"><button class="primary-button" type="submit">Save investment</button><button class="cancel-button" id="cancel-holding" type="button">Cancel</button></div>
@@ -54,6 +60,11 @@
       <p id="holding-message" class="dashboard-message" role="alert" aria-live="assertive"></p>
       <div id="holding-list" class="holding-list"></div>
       <p id="holdings-empty" class="holdings-empty" hidden>No investments recorded yet. Add your first holding to get started.</p>
+      <section class="sold-holdings-section" aria-labelledby="sold-holdings-heading">
+        <h3 id="sold-holdings-heading">SOLD</h3>
+        <div id="sold-holding-list" class="sold-holding-list"></div>
+        <p id="sold-holdings-empty" class="holdings-empty">No holdings sold from this portfolio yet.</p>
+      </section>
     </section>
     <footer class="dashboard-footer"><span>© 2026 Folio</span><span>A clearer view of what you own.</span></footer>
   </main>

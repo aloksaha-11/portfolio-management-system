@@ -40,6 +40,16 @@ public class BseMarketDataController {
         return prices.findLatestByKeys(normalized);
     }
 
+    @GetMapping("/api/market-data/bse/by-date")
+    public List<BseDailyPrice> byDate(@RequestParam LocalDate tradeDate) {
+        return prices.findByTradeDate(tradeDate);
+    }
+
+    @GetMapping("/api/market-data/bse/symbols")
+    public List<String> symbols() {
+        return prices.findAllSymbols();
+    }
+
     @GetMapping("/api/market-data/bse/status")
     public BseMarketStatus status() {
         return new BseMarketStatus(prices.latestTradeDate(), "BSE end-of-day Bhav Copy");

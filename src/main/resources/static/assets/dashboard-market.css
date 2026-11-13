@@ -1,9 +1,30 @@
 .stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 .price-as-of{margin-left:8px;color:#96a098;font-size:9px;font-weight:500;letter-spacing:0}
 .field small{display:block;margin-top:5px;color:#89958c;font-size:9px;line-height:1.4}
-.holding-row{grid-template-columns:minmax(145px,1.3fr) minmax(65px,.55fr) minmax(90px,.8fr) minmax(90px,.8fr) minmax(100px,.9fr) minmax(100px,.9fr)}
-.holding-row.header{grid-template-columns:minmax(145px,1.3fr) minmax(65px,.55fr) minmax(90px,.8fr) minmax(90px,.8fr) minmax(100px,.9fr) minmax(100px,.9fr)}
+.holding-row,.holding-row.header{grid-template-columns:minmax(160px,1.4fr) repeat(7,minmax(0,1fr))}
+.holding-row>:last-child{grid-column:8}
+.holding-action-buttons{display:flex;justify-self:center;gap:5px}
+.column-units,.column-average,.column-close,.column-market,.column-cost,.column-date,.column-actions{text-align:center}
+.holding-sell{padding:6px 10px;border:1px solid #cfe1d3;border-radius:5px;background:#edf6ef;color:#34734b;font:600 11px "DM Sans",sans-serif;cursor:pointer}
+.holding-sell:hover{background:#e1f0e4;border-color:#a9cbb0}
+.holding-sell:disabled{opacity:.6;cursor:wait}
+.sold-holdings-section{margin-top:22px;padding-top:17px;border-top:1px solid #e8eee9}
+.sold-holdings-section h3{margin:0 0 9px;color:#68766d;font:700 10px "DM Sans",sans-serif;letter-spacing:1px}
+.sold-holding-list{overflow-x:auto}
+.sold-holding-row{display:grid;grid-template-columns:minmax(170px,1.5fr) minmax(70px,.6fr) repeat(3,minmax(105px,.9fr)) minmax(105px,.9fr);gap:12px;align-items:center;padding:11px 5px;border-top:1px solid #edf0ed}
+.sold-holding-row.header{padding:8px 5px;border-top:0;color:#96a098;font-size:9px;font-weight:700;letter-spacing:.7px}
+.sold-holding-row .holding-value{white-space:nowrap}
 .column-units,.column-average{white-space:nowrap}
-.column-close,.column-market,.column-cost{white-space:nowrap}
-@media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.holding-list{overflow-x:auto}.holding-row,.holding-row.header{min-width:760px}}
-@media(max-width:540px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card{min-width:0}.stat-card strong{font-size:17px}.holding-row,.holding-row.header{min-width:620px}.column-units,.column-average{display:none}}
+.column-close,.column-market,.column-cost,.column-date{white-space:nowrap}
+.bse-data-card .section-heading{margin-bottom:8px}
+.bse-data-tools{display:flex;align-items:center;gap:12px}
+.bse-data-search{width:220px;height:35px;padding:0 11px;border:1px solid #dfe6e0;border-radius:6px;outline:none;background:#fff;color:var(--ink);font:400 11px "DM Sans",sans-serif}
+.bse-data-search:focus{border-color:#79aa87;box-shadow:0 0 0 3px #edf6ef}
+.bse-data-scroll{max-height:560px;overflow:auto;border:1px solid #e7eee8;border-radius:8px}
+.bse-data-table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap}
+.bse-data-table th,.bse-data-table td{padding:10px 12px;border-bottom:1px solid #edf1ed;text-align:right}
+.bse-data-table th:first-child,.bse-data-table td:first-child{text-align:left}
+.bse-data-table th{position:sticky;top:0;background:#f7faf7;color:#718077;font-size:9px;letter-spacing:.5px;text-transform:uppercase}
+.bse-data-table tbody tr:hover{background:#f8fbf8}
+@media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.holding-list{overflow-x:auto}.holding-row,.holding-row.header{min-width:960px}.sold-holding-list{overflow-x:auto}.sold-holding-row{min-width:760px}}
+@media(max-width:540px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card{min-width:0}.stat-card strong{font-size:17px}.bse-data-card .section-heading{flex-direction:column;align-items:stretch}.bse-data-tools{width:100%;gap:8px}.bse-data-search{width:auto;min-width:0;flex:1}.holding-row,.holding-row.header{min-width:760px;grid-template-columns:minmax(160px,1.4fr) repeat(5,minmax(0,1fr))}.holding-row>:last-child{grid-column:6}.column-units,.column-average{display:none}}

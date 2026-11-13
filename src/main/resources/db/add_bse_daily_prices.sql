@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS portfolio_management_system.bse_daily_prices (
     security_code VARCHAR(12) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     isin CHAR(12) CHARACTER SET ascii COLLATE ascii_bin NULL,
     bse_symbol VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin NULL,
+    company_name VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
     series VARCHAR(4) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     open_price DECIMAL(19,6) NULL,
     high_price DECIMAL(19,6) NULL,

@@ -12,13 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class BseDailyPriceRepository {
     private static final String INSERT_SQL = """
             INSERT INTO bse_daily_prices (
-                trade_date, security_code, isin, bse_symbol, series,
+                trade_date, security_code, isin, bse_symbol, company_name, series,
                 open_price, high_price, low_price, close_price, previous_close, volume
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             AS incoming
             ON DUPLICATE KEY UPDATE
                 isin = incoming.isin,
                 bse_symbol = incoming.bse_symbol,
+                company_name = COALESCE(incoming.company_name, bse_daily_prices.company_name),
                 open_price = incoming.open_price,
                 high_price = incoming.high_price,
                 low_price = incoming.low_price,
@@ -36,13 +37,22 @@ public class BseDailyPriceRepository {
                            ORDER BY p.trade_date DESC
                        ) AS price_rank
                 FROM bse_daily_prices p
-                WHERE p.bse_symbol IN (%s) OR p.security_code IN (%s)
+                WHERE (p.bse_symbol IN (%s) OR p.security_code IN (%s))
+                  AND p.trade_date = (SELECT MAX(trade_date) FROM bse_daily_prices)
             )
-            SELECT security_code, isin, bse_symbol, series, trade_date,
+            SELECT security_code, isin, bse_symbol, company_name, series, trade_date,
                    open_price, high_price, low_price, close_price, previous_close, volume
             FROM matched_prices
             WHERE price_rank = 1
             ORDER BY (series = 'EQ') DESC, bse_symbol ASC
+            """;
+
+    private static final String FOR_TRADE_DATE_SQL = """
+            SELECT security_code, isin, bse_symbol, company_name, series, trade_date,
+                   open_price, high_price, low_price, close_price, previous_close, volume
+            FROM bse_daily_prices
+            WHERE trade_date = ?
+            ORDER BY (series = 'EQ') DESC, bse_symbol ASC, security_code ASC
             """;
 
     private final JdbcTemplate jdbc;
@@ -61,16 +71,17 @@ public class BseDailyPriceRepository {
             statement.setString(2, price.securityCode());
             statement.setString(3, price.isin());
             statement.setString(4, price.symbol());
-            statement.setString(5, price.series());
-            statement.setBigDecimal(6, price.openPrice());
-            statement.setBigDecimal(7, price.highPrice());
-            statement.setBigDecimal(8, price.lowPrice());
-            statement.setBigDecimal(9, price.closePrice());
-            statement.setBigDecimal(10, price.previousClose());
+            statement.setString(5, price.companyName());
+            statement.setString(6, price.series());
+            statement.setBigDecimal(7, price.openPrice());
+            statement.setBigDecimal(8, price.highPrice());
+            statement.setBigDecimal(9, price.lowPrice());
+            statement.setBigDecimal(10, price.closePrice());
+            statement.setBigDecimal(11, price.previousClose());
             if (price.volume() == null) {
-                statement.setNull(11, java.sql.Types.BIGINT);
+                statement.setNull(12, java.sql.Types.BIGINT);
             } else {
-                statement.setLong(11, price.volume());
+                statement.setLong(12, price.volume());
             }
         });
         int changed = 0;
@@ -99,6 +110,7 @@ public class BseDailyPriceRepository {
                 result.getString("security_code"),
                 result.getString("isin"),
                 result.getString("bse_symbol"),
+                result.getString("company_name"),
                 result.getString("series"),
                 result.getDate("trade_date").toLocalDate(),
                 result.getBigDecimal("open_price"),
@@ -107,6 +119,40 @@ public class BseDailyPriceRepository {
                 result.getBigDecimal("close_price"),
                 result.getBigDecimal("previous_close"),
                 (Long) result.getObject("volume")), params);
+    }
+
+    public List<BseDailyPrice> findByTradeDate(java.time.LocalDate tradeDate) {
+        return jdbc.query(FOR_TRADE_DATE_SQL, (result, row) -> new BseDailyPrice(
+                result.getString("security_code"),
+                result.getString("isin"),
+                result.getString("bse_symbol"),
+                result.getString("company_name"),
+                result.getString("series"),
+                result.getDate("trade_date").toLocalDate(),
+                result.getBigDecimal("open_price"),
+                result.getBigDecimal("high_price"),
+                result.getBigDecimal("low_price"),
+                result.getBigDecimal("close_price"),
+                result.getBigDecimal("previous_close"),
+                (Long) result.getObject("volume")), Date.valueOf(tradeDate));
+    }
+
+    public List<String> findAllSymbols() {
+        return jdbc.queryForList("""
+                SELECT DISTINCT bse_symbol
+                FROM bse_daily_prices
+                WHERE bse_symbol IS NOT NULL AND TRIM(bse_symbol) <> ''
+                ORDER BY bse_symbol
+                """, String.class);
+    }
+
+    public List<java.time.LocalDate> findTradeDatesMissingCompanyNames(java.time.LocalDate fromDate) {
+        return jdbc.query("""
+                SELECT DISTINCT trade_date
+                FROM bse_daily_prices
+                WHERE trade_date >= ? AND company_name IS NULL
+                ORDER BY trade_date
+                """, (result, row) -> result.getDate(1).toLocalDate(), Date.valueOf(fromDate));
     }
 
     public java.time.LocalDate latestTradeDate() {

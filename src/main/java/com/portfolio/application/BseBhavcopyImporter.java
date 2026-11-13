@@ -51,6 +51,29 @@ public class BseBhavcopyImporter {
     @Scheduled(initialDelay = 15_000, fixedDelay = 86_400_000)
     public void catchUpAfterStartup() {
         importLatestAvailable();
+        backfillRecentCompanyNames();
+    }
+
+    private void backfillRecentCompanyNames() {
+        LocalDate fromDate = LocalDate.now(INDIA_ZONE).minusDays(MAX_LOOKBACK_DAYS);
+        for (LocalDate date : prices.findTradeDatesMissingCompanyNames(fromDate)) {
+            try {
+                HttpResponse<String> response = download(date);
+                if (response.statusCode() != 200) {
+                    logger.warn("Could not backfill BSE company names for {}: HTTP {}", date, response.statusCode());
+                    continue;
+                }
+                List<BseDailyPrice> rows = parse(response.body(), date);
+                int stored = prices.upsertAll(rows);
+                logger.info("Backfilled company names in {} BSE rows for {}", stored, date);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                logger.warn("BSE company-name backfill was interrupted", exception);
+                return;
+            } catch (IOException | RuntimeException exception) {
+                logger.warn("Could not backfill BSE company names for {}", date, exception);
+            }
+        }
     }
 
     public synchronized void importLatestAvailable() {
@@ -112,6 +135,7 @@ public class BseBhavcopyImporter {
         int securityCodeColumn = requiredColumn(columns, "FinInstrmId");
         int isinColumn = requiredColumn(columns, "ISIN");
         int symbolColumn = requiredColumn(columns, "TckrSymb");
+        int companyNameColumn = columns.getOrDefault("FinInstrmNm", -1);
         int seriesColumn = requiredColumn(columns, "SctySrs");
         int openColumn = requiredColumn(columns, "OpnPric");
         int highColumn = requiredColumn(columns, "HghPric");
@@ -141,10 +165,12 @@ public class BseBhavcopyImporter {
                 continue;
             }
             String symbol = value(values, symbolColumn).toUpperCase(Locale.ROOT);
+            String companyName = companyNameColumn < 0 ? null : nullable(value(values, companyNameColumn));
             result.add(new BseDailyPrice(
                     securityCode,
                     nullable(value(values, isinColumn)),
                     symbol.isBlank() ? null : symbol,
+                    companyName,
                     series,
                     tradeDate,
                     decimal(values, openColumn),

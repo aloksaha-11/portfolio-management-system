@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.portfolio.application.Holding;
+import com.portfolio.application.SoldHolding;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -98,6 +99,46 @@ public class HoldingRepository {
                 WHERE h.portfolio_id = ? AND p.user_id = ?
                 ORDER BY h.holding_id
                 """, HOLDING_MAPPER, portfolioId, userId);
+    }
+
+    public List<SoldHolding> findAllSoldByPortfolioAndOwner(long portfolioId, long userId) {
+        return jdbc.query("""
+                SELECT sold_holding_id, original_holding_id, portfolio_id, investment_type,
+                       investment_name, ticker, units_owned, average_purchase_price, added_at, sold_at
+                FROM sold_holdings
+                WHERE portfolio_id = ? AND owner_user_id = ?
+                ORDER BY sold_at DESC, sold_holding_id DESC
+                """, (result, row) -> {
+            BigDecimal units = result.getBigDecimal("units_owned");
+            BigDecimal price = result.getBigDecimal("average_purchase_price");
+            return new SoldHolding(
+                    result.getLong("sold_holding_id"),
+                    result.getLong("original_holding_id"),
+                    result.getLong("portfolio_id"),
+                    result.getString("investment_type"),
+                    result.getString("investment_name"),
+                    result.getString("ticker"),
+                    units,
+                    price,
+                    units.multiply(price).setScale(2, RoundingMode.HALF_UP),
+                    result.getTimestamp("added_at").toInstant(),
+                    result.getTimestamp("sold_at").toInstant());
+        }, portfolioId, userId);
+    }
+
+    public int moveToSoldByIdAndOwner(long holdingId, long userId) {
+        int inserted = jdbc.update("""
+                INSERT INTO sold_holdings (
+                    original_holding_id, owner_user_id, portfolio_id, investment_type,
+                    investment_name, ticker, units_owned, average_purchase_price, added_at
+                )
+                SELECT h.holding_id, h.owner_user_id, h.portfolio_id, h.investment_type,
+                       h.investment_name, h.ticker, h.units_owned, h.average_purchase_price, h.created_at
+                FROM holdings h
+                WHERE h.holding_id = ? AND h.owner_user_id = ?
+                """, holdingId, userId);
+        if (inserted == 0) return 0;
+        return jdbc.update("DELETE FROM holdings WHERE holding_id = ? AND owner_user_id = ?", holdingId, userId);
     }
 
     public Optional<Holding> findByIdAndOwner(long holdingId, long userId) {

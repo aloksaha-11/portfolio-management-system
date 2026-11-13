@@ -3,6 +3,7 @@ package com.portfolio.api;
 import java.util.List;
 import com.portfolio.application.Holding;
 import com.portfolio.application.HoldingService;
+import com.portfolio.application.SoldHolding;
 import com.portfolio.application.UserPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,13 @@ public class HoldingController {
         return holdings.list(user.userId(), portfolioId);
     }
 
+    @GetMapping("/api/portfolios/{portfolioId}/sold-holdings")
+    public List<SoldHolding> listSold(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable("portfolioId") long portfolioId) {
+        return holdings.listSold(user.userId(), portfolioId);
+    }
+
     @PostMapping("/api/portfolios/{portfolioId}/holdings")
     public ResponseEntity<Holding> add(
             @AuthenticationPrincipal UserPrincipal user,
@@ -53,6 +61,14 @@ public class HoldingController {
             @AuthenticationPrincipal UserPrincipal user,
             @PathVariable("holdingId") long holdingId) {
         holdings.delete(user.userId(), holdingId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/api/holdings/{holdingId}/sell")
+    public ResponseEntity<Void> sell(
+            @AuthenticationPrincipal UserPrincipal user,
+            @PathVariable("holdingId") long holdingId) {
+        holdings.sell(user.userId(), holdingId);
         return ResponseEntity.noContent().build();
     }
 }

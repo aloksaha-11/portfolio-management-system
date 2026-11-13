@@ -80,6 +80,10 @@ Constraints and indexes:
 
 The application computes `normalized_investment_name`; MySQL stores it and enforces uniqueness. Store both text columns with `utf8mb4` and a binary collation: identity comes from application normalization, not MySQL's locale-dependent case/accent rules. The display name remains unchanged apart from trimming. Ticker is not part of duplicate identity because it is optional. The 512-character normalized column keeps the `(portfolio_id, normalized_investment_name)` index within MySQL 8.4's InnoDB index-key limit under `utf8mb4`.
 
+## `sold_holdings`
+
+Stores a snapshot of each holding when the user marks it sold. The active row is removed in the same transaction, so the current portfolio summary excludes sold positions while the sale history retains the original units, cost basis inputs, and added/sold timestamps.
+
 ## `bse_daily_prices`
 
 Stores BSE cash-equity Bhav Copy closing prices by trading date. The whole daily equity file is retained so the dashboard can compare a user's cost basis with the latest available BSE close and keep a daily price history.
@@ -90,6 +94,7 @@ Stores BSE cash-equity Bhav Copy closing prices by trading date. The whole daily
 | `security_code` | `VARCHAR(12)` | Required; BSE `FinInstrmId` |
 | `isin` | `CHAR(12)` | Optional ISIN from the exchange file |
 | `symbol` | `VARCHAR(32)` | Optional BSE `TckrSymb`, stored uppercase |
+| `company_name` | `VARCHAR(200)` | Optional security name from BSE `FinInstrmNm` |
 | `series` | `VARCHAR(4)` | Required BSE security series |
 | `open_price`, `high_price`, `low_price`, `close_price`, `previous_close` | `DECIMAL(19,6)` | Rupee prices; close must be greater than zero |
 | `volume` | `BIGINT` | Optional reported traded quantity |

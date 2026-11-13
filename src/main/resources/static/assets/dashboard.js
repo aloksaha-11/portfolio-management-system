@@ -6,18 +6,33 @@
   const createForm = document.querySelector('#create-form');
   const createName = document.querySelector('#portfolio-name');
   const holdingForm = document.querySelector('#holding-form');
+  const investmentTypeSelect = document.querySelector('#investment-type');
   const companyName = document.querySelector('#company-name');
+  const companyNameLabel = document.querySelector('label[for="company-name"]');
+  const companyNameOptions = document.querySelector('#company-name-options');
   const tickerSelect = document.querySelector('#ticker');
+  const tickerField = tickerSelect.closest('.field');
+  const tickerHelp = document.querySelector('#ticker-help');
   const holdingMessage = document.querySelector('#holding-message');
   const holdingList = document.querySelector('#holding-list');
+  const soldHoldingList = document.querySelector('#sold-holding-list');
+  const soldHoldingsEmpty = document.querySelector('#sold-holdings-empty');
   const holdingsEmpty = document.querySelector('#holdings-empty');
   const holdingsSection = document.querySelector('#holdings-section');
   const portfolioSelectWrap = document.querySelector('#portfolio-select-wrap');
   const existingPortfolioSelect = document.querySelector('#existing-portfolio');
+  const bseDataBody = document.querySelector('#bse-data-body');
+  const bseDataMessage = document.querySelector('#bse-data-message');
+  const bseDataCount = document.querySelector('#bse-data-count');
+  const bseDataSearch = document.querySelector('#bse-data-search');
   let portfolios = [];
   let details = new Map();
+  let soldHoldings = new Map();
   let quotesByKey = new Map();
   let selectedPortfolioId = null;
+  let allBsePrices = [];
+  const symbolToCompany = new Map();
+  const companyToSymbol = new Map();
   const companyCodes = new Map([
     ['Reliance Industries Limited', '500325'],
     ['Tata Consultancy Services Limited', '532540'],
@@ -26,15 +41,24 @@
     ['State Bank of India', '500112']
   ]);
   const codeCompanies = new Map([...companyCodes].map(([company, code]) => [code, company]));
+  let allCompanyNames = [...companyCodes.keys()];
 
   document.querySelector('#show-create').addEventListener('click', showCreateForm);
   document.querySelector('#empty-create').addEventListener('click', showCreateForm);
   document.querySelector('#cancel-create').addEventListener('click', () => { createForm.hidden = true; });
   document.querySelector('#add-holding-toggle').addEventListener('click', () => { holdingForm.hidden = !holdingForm.hidden; });
   document.querySelector('#cancel-holding').addEventListener('click', () => { holdingForm.hidden = true; });
-  companyName.addEventListener('change', () => { tickerSelect.value = companyCodes.get(companyName.value) || ''; });
-  tickerSelect.addEventListener('change', () => { companyName.value = codeCompanies.get(tickerSelect.value) || ''; });
+  investmentTypeSelect.addEventListener('change', configureInvestmentNameFields);
+  companyName.addEventListener('input', () => {
+    syncTickerFromCompanyName();
+    filterCompanySuggestions();
+  });
+  companyName.addEventListener('change', syncTickerFromCompanyName);
+  tickerSelect.addEventListener('change', () => {
+    companyName.value = symbolToCompany.get(tickerSelect.value) || codeCompanies.get(tickerSelect.value) || '';
+  });
   document.querySelector('#logout-button').addEventListener('click', logout);
+  bseDataSearch.addEventListener('input', renderBsePrices);
   existingPortfolioSelect.addEventListener('change', () => {
     const portfolioId = Number(existingPortfolioSelect.value);
     if (Number.isSafeInteger(portfolioId) && portfolioId > 0) selectPortfolio(portfolioId);
@@ -46,14 +70,19 @@
 
   async function initialize() {
     try {
+      const portfoliosSection = document.querySelector('[aria-labelledby="portfolio-heading"]');
+      portfoliosSection.before(holdingsSection);
       const account = await api('api/auth/me');
       accountEmail.textContent = account.email;
       portfolios = await api('api/portfolios');
-      details = new Map(await Promise.all(portfolios.map(async (portfolio) => {
+      const loadedPortfolios = await Promise.all(portfolios.map(async (portfolio) => {
         const detail = await api(`api/portfolios/${portfolio.portfolioId}`);
-        return [portfolio.portfolioId, detail];
-      })));
-      await loadMarketPrices();
+        const sold = await api(`api/portfolios/${portfolio.portfolioId}/sold-holdings`).catch(() => []);
+        return { portfolioId: portfolio.portfolioId, detail, sold };
+      }));
+      details = new Map(loadedPortfolios.map(({ portfolioId, detail }) => [portfolioId, detail]));
+      soldHoldings = new Map(loadedPortfolios.map(({ portfolioId, sold }) => [portfolioId, sold]));
+      await Promise.allSettled([loadMarketPrices(), loadBseDateData()]);
       renderPortfolios();
       updateSummary();
       if (portfolios.length) selectPortfolio(portfolios[0].portfolioId);
@@ -77,6 +106,7 @@
         });
         portfolios.push(created);
         details.set(created.portfolioId, await api(`api/portfolios/${created.portfolioId}`));
+        soldHoldings.set(created.portfolioId, []);
         createName.value = '';
         createForm.hidden = true;
         renderPortfolios();
@@ -98,13 +128,17 @@
       try {
         const csrf = await getCsrf();
         const data = new FormData(holdingForm);
+        const investmentType = data.get('investmentType');
+        const companyOrInvestmentName = data.get('companyName').trim()
+          || (investmentType === 'Commodities-Gold' ? 'Gold'
+            : investmentType === 'Commodities-Silver' ? 'Silver' : '');
         await api(`api/portfolios/${selectedPortfolioId}/holdings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', [csrf.headerName]: csrf.token },
           body: JSON.stringify({
-            investmentType: data.get('investmentType'),
-            companyName: data.get('companyName').trim(),
-            ticker: data.get('ticker').trim() || null,
+            investmentType,
+            companyName: companyOrInvestmentName,
+            ticker: tickerField.hidden ? null : data.get('ticker').trim() || null,
             unitsOwned: data.get('unitsOwned'),
             averagePurchasePrice: data.get('averagePurchasePrice')
           })
@@ -188,6 +222,7 @@
     document.querySelector('#holdings-heading').textContent = selected ? `${selected.name} holdings` : 'Holdings';
     renderPortfolios();
     renderHoldings();
+    renderSoldHoldings();
   }
 
   function renderHoldings() {
@@ -205,6 +240,7 @@
       ['BSE CLOSE', 'column-close'],
       ['MARKET VALUE', 'column-market'],
       ['COST BASIS', 'column-cost'],
+      ['DATE', 'column-date'],
       ['ACTIONS', 'column-actions']
     ].forEach(([label, className]) => {
       const cell = document.createElement('span');
@@ -231,12 +267,15 @@
       }
       const quote = quoteFor(holding);
       const marketValue = quote ? Number(quote.closePrice) * Number(holding.unitsOwned) : null;
-      const deleteButton = document.createElement('button');
-      deleteButton.type = 'button';
-      deleteButton.className = 'holding-delete';
-      deleteButton.textContent = 'Delete';
-      deleteButton.setAttribute('aria-label', `Delete ${holding.investmentName}`);
-      deleteButton.addEventListener('click', () => deleteHolding(holding, deleteButton));
+      const actions = document.createElement('span');
+      actions.className = 'holding-action-buttons column-actions';
+      const sellButton = document.createElement('button');
+      sellButton.type = 'button';
+      sellButton.className = 'holding-sell';
+      sellButton.textContent = 'Sell';
+      sellButton.setAttribute('aria-label', `Sell all ${formatNumber(holding.unitsOwned)} units of ${holding.investmentName}`);
+      sellButton.addEventListener('click', () => sellHolding(holding, sellButton));
+      actions.append(sellButton);
       row.append(
         name,
         cell(formatNumber(holding.unitsOwned), 'column-units'),
@@ -244,30 +283,69 @@
         cell(quote ? formatCurrency(quote.closePrice) : '—', 'column-close'),
         cell(marketValue === null ? '—' : formatCurrency(marketValue), 'column-market'),
         cell(formatCurrency(holding.costBasis), 'column-cost'),
-        deleteButton
+        cell(formatDate(holding.createdAt), 'column-date'),
+        actions
       );
       holdingList.append(row);
     });
   }
 
-  async function deleteHolding(holding, button) {
-    if (!window.confirm(`Delete ${holding.investmentName} from this portfolio? This cannot be undone.`)) return;
+  function renderSoldHoldings() {
+    const rows = soldHoldings.get(selectedPortfolioId) || [];
+    soldHoldingList.replaceChildren();
+    soldHoldingsEmpty.hidden = rows.length !== 0;
+    if (!rows.length) return;
+    const header = document.createElement('div');
+    header.className = 'sold-holding-row header';
+    ['TYPE / COMPANY', 'UNITS', 'AVG. PRICE', 'COST BASIS', 'DATE ADDED', 'DATE SOLD']
+      .forEach((label) => {
+        const cellElement = document.createElement('span');
+        cellElement.textContent = label;
+        header.append(cellElement);
+      });
+    soldHoldingList.append(header);
+    rows.forEach((holding) => {
+      const row = document.createElement('div');
+      row.className = 'sold-holding-row';
+      const name = document.createElement('span');
+      name.className = 'holding-name';
+      const type = document.createElement('span');
+      type.className = 'holding-type';
+      type.textContent = holding.investmentType;
+      name.append(type, document.createTextNode(holding.investmentName));
+      row.append(
+        name,
+        cell(formatNumber(holding.unitsOwned)),
+        cell(formatCurrency(holding.averagePurchasePrice)),
+        cell(formatCurrency(holding.costBasis)),
+        cell(formatDate(holding.addedAt)),
+        cell(formatDate(holding.soldAt))
+      );
+      soldHoldingList.append(row);
+    });
+  }
+
+  async function sellHolding(holding, button) {
+    if (!window.confirm(`Sell all ${formatNumber(holding.unitsOwned)} units of ${holding.investmentName}? This will move the holding to SOLD.`)) return;
     clearHoldingMessage();
-    await withBusy(button, 'Deleting…', async () => {
+    await withBusy(button, 'Selling…', async () => {
       try {
         const csrf = await getCsrf();
-        await api(`api/holdings/${holding.holdingId}`, {
-          method: 'DELETE',
+        await api(`api/holdings/${holding.holdingId}/sell`, {
+          method: 'POST',
           headers: { [csrf.headerName]: csrf.token }
         });
         details.set(selectedPortfolioId, await api(`api/portfolios/${selectedPortfolioId}`));
+        soldHoldings.set(selectedPortfolioId,
+          await api(`api/portfolios/${selectedPortfolioId}/sold-holdings`));
         await loadMarketPrices();
         renderHoldings();
+        renderSoldHoldings();
         updateSummary();
-        holdingMessage.textContent = 'Holding deleted.';
+        holdingMessage.textContent = 'Holding moved to SOLD.';
         holdingMessage.className = 'dashboard-message success';
       } catch (error) {
-        holdingMessage.textContent = error.message || 'We could not delete this holding. Please try again.';
+        holdingMessage.textContent = error.message || 'We could not sell this holding. Please try again.';
         holdingMessage.className = 'dashboard-message';
       }
     });
@@ -302,7 +380,7 @@
     try {
       const status = await api('api/market-data/bse/status');
       document.querySelector('#price-as-of').textContent = status.latestTradeDate
-        ? `LATEST CLOSE · ${status.latestTradeDate}`
+        ? `PREVIOUS DAY CLOSE · ${status.latestTradeDate}`
         : 'NO CLOSE IMPORTED YET';
       const keys = [...new Set([...details.values()].flatMap((detail) => detail.holdings
         .map((holding) => holding.ticker?.trim().toUpperCase())
@@ -322,6 +400,114 @@
     } catch (error) {
       document.querySelector('#price-as-of').textContent = 'BSE prices unavailable';
       quotesByKey = new Map();
+    }
+  }
+
+  async function loadBseDateData() {
+    const tradeDate = '2026-11-12';
+    try {
+      const result = await api(`api/market-data/bse/by-date?tradeDate=${tradeDate}`);
+      if (!Array.isArray(result)) throw new Error('The BSE prices response was not a list.');
+      allBsePrices = result;
+      populateBseListings(allBsePrices);
+      renderBsePrices();
+    } catch (error) {
+      bseDataCount.textContent = 'Prices unavailable';
+      bseDataMessage.textContent = error.message || 'Could not load BSE prices for 12-Nov-2026.';
+    }
+  }
+
+  function renderBsePrices() {
+    const query = bseDataSearch.value.trim().toLocaleLowerCase();
+    const prices = query
+      ? allBsePrices.filter((price) => [price.companyName, price.symbol]
+        .some((value) => value?.toLocaleLowerCase().includes(query)))
+      : allBsePrices;
+    const rows = document.createDocumentFragment();
+    prices.forEach((price) => {
+      const row = document.createElement('tr');
+      const displayName = price.symbol || price.isin || price.securityCode;
+      [displayName, price.securityCode, price.series, price.openPrice, price.highPrice,
+        price.lowPrice, price.closePrice, price.previousClose, price.volume]
+        .forEach((value, index) => {
+          const cell = document.createElement('td');
+          cell.textContent = value == null ? '—'
+            : index >= 3 && index <= 7 ? formatNumber(value)
+              : String(value);
+          row.append(cell);
+        });
+      rows.append(row);
+    });
+    bseDataBody.replaceChildren(rows);
+    bseDataCount.textContent = query
+      ? `${prices.length.toLocaleString('en-IN')} of ${allBsePrices.length.toLocaleString('en-IN')} securities`
+      : `${allBsePrices.length.toLocaleString('en-IN')} securities`;
+    bseDataMessage.textContent = query
+      ? prices.length ? `Matching BSE rows for “${bseDataSearch.value.trim()}”.` : 'No matching company or symbol found.'
+      : allBsePrices.length ? 'Showing BSE rows imported for 12-Nov-2026.' : 'No BSE prices were found for 12-Nov-2026.';
+  }
+
+  function populateBseListings(prices) {
+    const symbols = [...new Set(prices.map((price) => price.symbol?.trim()).filter(Boolean))].sort();
+    const listings = new Map();
+    prices.forEach((price) => {
+      const symbol = price.symbol?.trim();
+      const name = price.companyName?.trim();
+      if (symbol && name && !listings.has(symbol)) listings.set(symbol, name);
+    });
+    symbolToCompany.clear();
+    companyToSymbol.clear();
+    listings.forEach((name, symbol) => {
+      symbolToCompany.set(symbol, name);
+      if (!companyToSymbol.has(name)) companyToSymbol.set(name, symbol);
+    });
+
+    const symbolGroup = makeOptionGroup(tickerSelect, 'BSE symbols', symbols);
+    const companyNames = [...new Set(listings.values())].sort((a, b) => a.localeCompare(b));
+    populateCompanySuggestions(companyNames);
+    tickerHelp.textContent = listings.size
+      ? `${symbols.length.toLocaleString('en-IN')} BSE symbols and ${companyNames.length.toLocaleString('en-IN')} company names loaded.`
+      : 'BSE symbols loaded; company names were not present in the imported data.';
+  }
+
+  function makeOptionGroup(select, label, values) {
+    select.querySelector(`optgroup[label="${label}"]`)?.remove();
+    const group = document.createElement('optgroup');
+    group.label = label;
+    const existing = new Set([...select.options].map((option) => option.value));
+    values.forEach((value) => {
+      if (!existing.has(value)) group.append(new Option(value, value));
+    });
+    if (group.children.length) select.append(group);
+    return group;
+  }
+
+  function populateCompanySuggestions(names) {
+    allCompanyNames = [...new Set([...companyCodes.keys(), ...names])].sort((a, b) => a.localeCompare(b));
+    filterCompanySuggestions();
+  }
+
+  function filterCompanySuggestions() {
+    const prefix = companyName.value.trim().toLocaleLowerCase();
+    const matches = allCompanyNames.filter((name) => name.toLocaleLowerCase().startsWith(prefix));
+    companyNameOptions.replaceChildren(...matches.map((name) => new Option(name, name)));
+  }
+
+  function syncTickerFromCompanyName() {
+    const name = companyName.value.trim();
+    tickerSelect.value = companyToSymbol.get(name) || companyCodes.get(name) || '';
+  }
+
+  function configureInvestmentNameFields() {
+    const investmentType = investmentTypeSelect.value;
+    const isCommodity = investmentType === 'Commodities-Gold' || investmentType === 'Commodities-Silver';
+    companyName.required = !isCommodity;
+    companyNameLabel.textContent = isCommodity ? 'Commodity name (optional)' : 'Company name';
+    companyName.placeholder = isCommodity ? 'Optional; defaults to Gold or Silver' : 'Type to search companies';
+    tickerField.hidden = isCommodity;
+    if (isCommodity) {
+      companyName.value = '';
+      tickerSelect.value = '';
     }
   }
 
@@ -400,5 +586,17 @@
 
   function formatNumber(value) {
     return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 8 }).format(Number(value) || 0);
+  }
+
+  function formatDate(value) {
+    const numericValue = typeof value === 'number' || (typeof value === 'string' && /^\d+(\.\d+)?$/.test(value))
+      ? Number(value)
+      : null;
+    const date = new Date(numericValue === null
+      ? value
+      : Math.abs(numericValue) < 1e12 ? numericValue * 1000 : numericValue);
+    return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat('en-IN', {
+      day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
+    }).format(date);
   }
 })();

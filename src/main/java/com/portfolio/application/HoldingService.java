@@ -31,6 +31,12 @@ public class HoldingService {
         return holdings.findAllByPortfolioAndOwner(portfolioId, userId);
     }
 
+    @Transactional(readOnly = true)
+    public List<SoldHolding> listSold(long userId, long portfolioId) {
+        portfolios.requireOwned(userId, portfolioId);
+        return holdings.findAllSoldByPortfolioAndOwner(portfolioId, userId);
+    }
+
     @Transactional
     public Holding add(long userId, long portfolioId, HoldingInput input) {
         portfolios.requireOwned(userId, portfolioId);
@@ -70,6 +76,13 @@ public class HoldingService {
     @Transactional
     public void delete(long userId, long holdingId) {
         if (holdings.deleteByIdAndOwner(holdingId, userId) == 0) {
+            throw holdingNotFound();
+        }
+    }
+
+    @Transactional
+    public void sell(long userId, long holdingId) {
+        if (holdings.moveToSoldByIdAndOwner(holdingId, userId) == 0) {
             throw holdingNotFound();
         }
     }
