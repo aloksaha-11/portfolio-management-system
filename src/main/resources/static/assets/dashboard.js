@@ -25,6 +25,8 @@
   const bseDataMessage = document.querySelector('#bse-data-message');
   const bseDataCount = document.querySelector('#bse-data-count');
   const bseDataSearch = document.querySelector('#bse-data-search');
+  const bseDateSelect = document.querySelector('#bse-date-select');
+  let selectedTradeDate = null;
   let portfolios = [];
   let details = new Map();
   let soldHoldings = new Map();
@@ -59,12 +61,39 @@
   });
   document.querySelector('#logout-button').addEventListener('click', logout);
   bseDataSearch.addEventListener('input', renderBsePrices);
+  bseDateSelect?.addEventListener('change', async () => {
+    const chosen = bseDateSelect.value;
+    if (chosen && chosen !== selectedTradeDate) {
+      selectedTradeDate = chosen;
+      await loadBseDateData(selectedTradeDate);
+    }
+  });
   existingPortfolioSelect.addEventListener('change', () => {
     const portfolioId = Number(existingPortfolioSelect.value);
     if (Number.isSafeInteger(portfolioId) && portfolioId > 0) selectPortfolio(portfolioId);
   });
   createForm.addEventListener('submit', createPortfolio);
   holdingForm.addEventListener('submit', addHolding);
+  document.querySelectorAll('.bse-tag-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const type = e.currentTarget.getAttribute('data-type');
+      if (type) openHoldingFormWithType(type);
+    });
+  });
+
+  function openHoldingFormWithType(type) {
+    if (!selectedPortfolioId && portfolios.length > 0) {
+      selectPortfolio(portfolios[0].id);
+    }
+    if (holdingsSection) holdingsSection.hidden = false;
+    if (holdingForm) {
+      holdingForm.hidden = false;
+      investmentTypeSelect.value = type;
+      configureInvestmentNameFields();
+      holdingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      companyName.focus();
+    }
+  }
 
   initialize();
 
@@ -380,7 +409,7 @@
     try {
       const status = await api('api/market-data/bse/status');
       document.querySelector('#price-as-of').textContent = status.latestTradeDate
-        ? `PREVIOUS DAY CLOSE · ${status.latestTradeDate}`
+        ? `PREVIOUS DAY CLOSE · ${formatTradeDate(status.latestTradeDate)}`
         : 'NO CLOSE IMPORTED YET';
       const keys = [...new Set([...details.values()].flatMap((detail) => detail.holdings
         .map((holding) => holding.ticker?.trim().toUpperCase())
@@ -403,17 +432,204 @@
     }
   }
 
-  async function loadBseDateData() {
-    const tradeDate = '2026-11-12';
+  function toIsoDateString(val) {
+    if (!val) return '';
+    if (Array.isArray(val)) {
+      const y = String(val[0]).padStart(4, '0');
+      const m = String(val[1]).padStart(2, '0');
+      const d = String(val[2]).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    const str = String(val).trim();
+    if (str.includes(',')) {
+      const parts = str.split(',').map((p) => p.trim());
+      if (parts.length === 3) {
+        return `${parts[0].padStart(4, '0')}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      }
+    }
+    return str;
+  }
+
+  function formatTradeDate(val) {
+    const iso = toIsoDateString(val);
+    if (!iso) return '';
+    const parts = iso.split('-');
+    if (parts.length !== 3) return iso;
+    const [year, month, day] = parts;
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const idx = parseInt(month, 10) - 1;
+    const mon = monthNames[idx] || month;
+    const paddedDay = String(parseInt(day, 10)).padStart(2, '0');
+    return `${paddedDay}-${mon}-${year}`;
+  }
+
+  async function loadBseDateData(preferredDate) {
     try {
-      const result = await api(`api/market-data/bse/by-date?tradeDate=${tradeDate}`);
+      if (!preferredDate) {
+        const dates = await api('api/market-data/bse/dates');
+        if (Array.isArray(dates) && dates.length > 0) {
+          if (bseDateSelect) {
+            bseDateSelect.replaceChildren();
+            dates.forEach((date) => {
+              const iso = toIsoDateString(date);
+              const opt = document.createElement('option');
+              opt.value = iso;
+              opt.textContent = formatTradeDate(date);
+              bseDateSelect.append(opt);
+            });
+          }
+          selectedTradeDate = toIsoDateString(dates[0]);
+          if (bseDateSelect) bseDateSelect.value = selectedTradeDate;
+        } else {
+          if (bseDateSelect) {
+            bseDateSelect.replaceChildren();
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'No dates available';
+            bseDateSelect.append(opt);
+          }
+          bseDataCount.textContent = 'Prices unavailable';
+          bseDataMessage.textContent = 'No trade dates available in BSE daily prices.';
+          return;
+        }
+      } else {
+        selectedTradeDate = toIsoDateString(preferredDate);
+        if (bseDateSelect) bseDateSelect.value = selectedTradeDate;
+      }
+
+      bseDataCount.textContent = 'Loading prices…';
+      bseDataMessage.textContent = `Loading BSE data for ${formatTradeDate(selectedTradeDate)}…`;
+
+      const result = await api(`api/market-data/bse/by-date?tradeDate=${encodeURIComponent(selectedTradeDate)}`);
       if (!Array.isArray(result)) throw new Error('The BSE prices response was not a list.');
       allBsePrices = result;
       populateBseListings(allBsePrices);
+      renderBseTrendAnalysis(allBsePrices);
       renderBsePrices();
     } catch (error) {
       bseDataCount.textContent = 'Prices unavailable';
-      bseDataMessage.textContent = error.message || 'Could not load BSE prices for 12-Nov-2026.';
+      const panel = document.querySelector('#bse-trend-panel');
+      if (panel) panel.hidden = true;
+      const label = selectedTradeDate ? formatTradeDate(selectedTradeDate) : 'selected date';
+      bseDataMessage.textContent = error.message || `Could not load BSE prices for ${label}.`;
+    }
+  }
+
+  function renderBseTrendAnalysis(prices) {
+    const panel = document.querySelector('#bse-trend-panel');
+    if (!panel) return;
+    if (!Array.isArray(prices) || prices.length === 0) {
+      panel.hidden = true;
+      return;
+    }
+
+    let advances = 0;
+    let declines = 0;
+    let unchanged = 0;
+    let sumPct = 0;
+    let countedForPct = 0;
+    let totalVolume = 0;
+
+    prices.forEach((price) => {
+      const close = Number(price.closePrice);
+      const prev = Number(price.previousClose);
+      if (Number.isFinite(close) && Number.isFinite(prev) && prev > 0 && close > 0) {
+        if (close > prev) advances++;
+        else if (close < prev) declines++;
+        else unchanged++;
+
+        const pct = ((close - prev) / prev) * 100;
+        sumPct += pct;
+        countedForPct++;
+      }
+      if (price.volume != null) {
+        totalVolume += Number(price.volume) || 0;
+      }
+    });
+
+    const totalValid = advances + declines + unchanged;
+    if (totalValid === 0) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+
+    const advancesPct = ((advances / totalValid) * 100).toFixed(1);
+    const declinesPct = ((declines / totalValid) * 100).toFixed(1);
+    const unchangedPct = ((unchanged / totalValid) * 100).toFixed(1);
+    const avgChange = countedForPct > 0 ? (sumPct / countedForPct).toFixed(2) : '0.00';
+    const isUp = advances >= declines;
+
+    // Badge
+    const badge = document.querySelector('#bse-trend-badge');
+    const badgeText = document.querySelector('#bse-trend-text');
+    const badgeIcon = document.querySelector('#bse-trend-icon');
+    if (badge && badgeText && badgeIcon) {
+      badge.className = isUp ? 'bse-trend-badge up' : 'bse-trend-badge down';
+      badgeIcon.textContent = isUp ? '▲' : '▼';
+      const sign = Number(avgChange) > 0 ? '+' : '';
+      badgeText.textContent = `Market is ${isUp ? 'UP' : 'DOWN'} (${sign}${avgChange}% Avg)`;
+    }
+
+    // Stats
+    const statAdv = document.querySelector('#bse-stat-advances');
+    const statDec = document.querySelector('#bse-stat-declines');
+    const statVol = document.querySelector('#bse-stat-volume');
+    if (statAdv) statAdv.textContent = advances.toLocaleString('en-IN');
+    if (statDec) statDec.textContent = declines.toLocaleString('en-IN');
+    if (statVol) {
+      const volM = (totalVolume / 1e6).toFixed(1);
+      statVol.textContent = `${volM}M shares`;
+    }
+
+    // Breadth Bar
+    const upLabel = document.querySelector('#bse-breadth-up-label');
+    const downLabel = document.querySelector('#bse-breadth-down-label');
+    const segUp = document.querySelector('#bse-seg-up');
+    const segSame = document.querySelector('#bse-seg-same');
+    const segDown = document.querySelector('#bse-seg-down');
+
+    if (upLabel) upLabel.textContent = `▲ Advances: ${advances.toLocaleString('en-IN')} (${advancesPct}%)`;
+    if (downLabel) downLabel.textContent = `▼ Declines: ${declines.toLocaleString('en-IN')} (${declinesPct}%)`;
+    if (segUp) segUp.style.width = `${advancesPct}%`;
+    if (segSame) segSame.style.width = `${unchangedPct}%`;
+    if (segDown) segDown.style.width = `${declinesPct}%`;
+
+    // Key Movers
+    const moversContainer = document.querySelector('#bse-trend-movers-list');
+    if (moversContainer) {
+      moversContainer.replaceChildren();
+      const targetSymbols = ['RELIANCE', 'TCS', 'INFY', 'ICICIBANK', 'SBIN', 'ITC'];
+      const found = new Map();
+      prices.forEach((p) => {
+        const sym = p.symbol?.trim().toUpperCase();
+        if (targetSymbols.includes(sym) && !found.has(sym)) {
+          found.set(sym, p);
+        }
+      });
+
+      targetSymbols.forEach((sym) => {
+        const item = found.get(sym);
+        if (item && item.previousClose && item.closePrice) {
+          const close = Number(item.closePrice);
+          const prev = Number(item.previousClose);
+          const diff = close - prev;
+          const pct = ((diff / prev) * 100).toFixed(2);
+          const moverUp = diff >= 0;
+
+          const chip = document.createElement('span');
+          chip.className = `bse-mover-chip ${moverUp ? 'up' : 'down'}`;
+          chip.title = `${item.companyName || sym}: ₹${formatNumber(prev)} → ₹${formatNumber(close)}`;
+          chip.innerHTML = `<span class="mover-symbol">${sym}</span> <span class="mover-change">${moverUp ? '+' : ''}${pct}% ${moverUp ? '▲' : '▼'}</span>`;
+          moversContainer.append(chip);
+        }
+      });
+    }
+
+    // Downturn suggestion advisory: Show when market is going down, hide when market is going up
+    const suggestionBox = document.querySelector('#bse-trend-suggestion');
+    if (suggestionBox) {
+      suggestionBox.hidden = isUp;
     }
   }
 
@@ -442,9 +658,10 @@
     bseDataCount.textContent = query
       ? `${prices.length.toLocaleString('en-IN')} of ${allBsePrices.length.toLocaleString('en-IN')} securities`
       : `${allBsePrices.length.toLocaleString('en-IN')} securities`;
+    const displayDate = selectedTradeDate ? formatTradeDate(selectedTradeDate) : 'selected date';
     bseDataMessage.textContent = query
       ? prices.length ? `Matching BSE rows for “${bseDataSearch.value.trim()}”.` : 'No matching company or symbol found.'
-      : allBsePrices.length ? 'Showing BSE rows imported for 12-Nov-2026.' : 'No BSE prices were found for 12-Nov-2026.';
+      : allBsePrices.length ? `Showing BSE rows imported for ${displayDate}.` : `No BSE prices were found for ${displayDate}.`;
   }
 
   function populateBseListings(prices) {

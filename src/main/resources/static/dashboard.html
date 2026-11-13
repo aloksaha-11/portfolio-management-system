@@ -32,7 +32,59 @@
     </section>
 
     <section class="content-card bse-data-card" aria-labelledby="bse-data-heading">
-      <div class="section-heading"><div><p class="eyebrow">BSE END-OF-DAY DATA</p><h2 id="bse-data-heading">Market prices: 12-Nov-2026</h2></div><div class="bse-data-tools"><input id="bse-data-search" class="bse-data-search" type="search" placeholder="Search company or symbol" aria-label="Search BSE company or symbol"><span id="bse-data-count" class="price-as-of">Loading prices…</span></div></div>
+      <div class="section-heading"><div class="bse-heading-group"><p class="eyebrow">BSE END-OF-DAY DATA</p><div class="bse-data-title-row"><h2 id="bse-data-heading">Market prices:</h2><select id="bse-date-select" class="bse-date-select" aria-label="Select BSE trade date"><option value="">Loading dates…</option></select></div></div><div class="bse-data-tools"><input id="bse-data-search" class="bse-data-search" type="search" placeholder="Search company or symbol" aria-label="Search BSE company or symbol"><span id="bse-data-count" class="price-as-of">Loading prices…</span></div></div>
+      
+      <!-- BSE Daily Trend Analysis Panel -->
+      <div id="bse-trend-panel" class="bse-trend-panel">
+        <div class="bse-trend-header">
+          <div class="bse-trend-title-group">
+            <span class="bse-trend-eyebrow">DAILY TREND ANALYSIS</span>
+            <div id="bse-trend-badge" class="bse-trend-badge down">
+              <span id="bse-trend-icon" aria-hidden="true">▼</span>
+              <span id="bse-trend-text">Calculating trend…</span>
+            </div>
+          </div>
+          <div class="bse-trend-stats">
+            <span>Advances: <strong id="bse-stat-advances" class="bse-trend-stat-val up">—</strong></span>
+            <span>Declines: <strong id="bse-stat-declines" class="bse-trend-stat-val down">—</strong></span>
+            <span>Volume: <strong id="bse-stat-volume" class="bse-trend-stat-val">—</strong></span>
+          </div>
+        </div>
+        <div class="bse-breadth-bar-wrap">
+          <div class="bse-breadth-bar-labels">
+            <span id="bse-breadth-up-label" class="up-label">▲ Advances</span>
+            <span id="bse-breadth-down-label" class="down-label">▼ Declines</span>
+          </div>
+          <div class="bse-breadth-bar" role="progressbar" aria-label="BSE Advances vs Declines">
+            <div id="bse-seg-up" class="bse-breadth-seg-up" style="width: 50%" title="Advances"></div>
+            <div id="bse-seg-same" class="bse-breadth-seg-same" style="width: 5%" title="Unchanged"></div>
+            <div id="bse-seg-down" class="bse-breadth-seg-down" style="width: 45%" title="Declines"></div>
+          </div>
+        </div>
+        <div class="bse-trend-movers">
+          <span class="bse-trend-movers-title">Key Movers:</span>
+          <div id="bse-trend-movers-list" class="bse-trend-movers-list"></div>
+        </div>
+
+        <!-- Market Downturn Suggestion Advisory -->
+        <div id="bse-trend-suggestion" class="bse-trend-suggestion" hidden>
+          <div class="bse-suggestion-header">
+            <span class="bse-suggestion-icon" aria-hidden="true">💡</span>
+            <div class="bse-suggestion-content">
+              <strong>Market Downturn Advisory:</strong>
+              <span>BSE is trending down. Consider diversifying your funds into alternative and defensive options to hedge risk:</span>
+            </div>
+          </div>
+          <div class="bse-suggestion-tags">
+            <button type="button" class="bse-tag-btn" data-type="Bonds">🏛️ Bonds</button>
+            <button type="button" class="bse-tag-btn" data-type="Commodities-Gold">🪙 Commodities-Gold</button>
+            <button type="button" class="bse-tag-btn" data-type="Commodities-Silver">🥈 Commodities-Silver</button>
+            <button type="button" class="bse-tag-btn" data-type="Equity">📈 Equity</button>
+            <button type="button" class="bse-tag-btn" data-type="Intraday">⚡ Intraday</button>
+          </div>
+        </div>
+      </div>
+
       <p id="bse-data-message" class="dashboard-message" role="status" aria-live="polite">Loading BSE data…</p>
       <div class="bse-data-scroll"><table class="bse-data-table"><thead><tr><th>Company / Symbol</th><th>Security code</th><th>Series</th><th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Previous close</th><th>Volume</th></tr></thead><tbody id="bse-data-body"></tbody></table></div>
     </section>

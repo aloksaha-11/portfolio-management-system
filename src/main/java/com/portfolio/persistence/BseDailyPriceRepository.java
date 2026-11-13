@@ -161,4 +161,12 @@ public class BseDailyPriceRepository {
             return date == null ? null : date.toLocalDate();
         });
     }
+
+    public List<java.time.LocalDate> findDistinctTradeDates() {
+        return jdbc.query("""
+                SELECT DISTINCT trade_date
+                FROM bse_daily_prices
+                ORDER BY trade_date DESC
+                """, (result, row) -> result.getDate(1).toLocalDate());
+    }
 }

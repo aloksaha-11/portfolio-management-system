@@ -41,8 +41,17 @@ public class BseMarketDataController {
     }
 
     @GetMapping("/api/market-data/bse/by-date")
-    public List<BseDailyPrice> byDate(@RequestParam LocalDate tradeDate) {
-        return prices.findByTradeDate(tradeDate);
+    public List<BseDailyPrice> byDate(@RequestParam String tradeDate) {
+        String normalized = tradeDate.trim().replace(',', '-');
+        LocalDate parsedDate = LocalDate.parse(normalized);
+        return prices.findByTradeDate(parsedDate);
+    }
+
+    @GetMapping("/api/market-data/bse/dates")
+    public List<String> tradeDates() {
+        return prices.findDistinctTradeDates().stream()
+                .map(LocalDate::toString)
+                .toList();
     }
 
     @GetMapping("/api/market-data/bse/symbols")
@@ -52,9 +61,10 @@ public class BseMarketDataController {
 
     @GetMapping("/api/market-data/bse/status")
     public BseMarketStatus status() {
-        return new BseMarketStatus(prices.latestTradeDate(), "BSE end-of-day Bhav Copy");
+        LocalDate latest = prices.latestTradeDate();
+        return new BseMarketStatus(latest == null ? null : latest.toString(), "BSE end-of-day Bhav Copy");
     }
 
-    public record BseMarketStatus(LocalDate latestTradeDate, String source) {
+    public record BseMarketStatus(String latestTradeDate, String source) {
     }
 }

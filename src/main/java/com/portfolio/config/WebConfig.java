@@ -32,6 +32,11 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 These lines only declare the package and make types available by short name. They do not configure Spring by themselves; annotations and code elsewhere in the file determine how the imports are used. */
 
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Configuration
 @EnableWebMvc
@@ -84,5 +89,16 @@ public class WebConfig implements WebMvcConfigurer {
 /* AuthenticationPrincipalArgumentResolver handles parameters annotated with @AuthenticationPrincipal. It gets the current principal from Spring Security’s authentication context. 
    resolvers.add(...) registers that handler with Spring MVC. */
         resolvers.add(new AuthenticationPrincipalArgumentResolver());
+    }
+
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        for (HttpMessageConverter<?> converter : converters) {
+            if (converter instanceof MappingJackson2HttpMessageConverter jacksonConverter) {
+                ObjectMapper mapper = jacksonConverter.getObjectMapper();
+                mapper.registerModule(new JavaTimeModule());
+                mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            }
+        }
     }
 }
