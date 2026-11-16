@@ -12,6 +12,7 @@
 .sold-holdings-section h3{margin:0 0 9px;color:#68766d;font:700 10px "DM Sans",sans-serif;letter-spacing:1px}
 .sold-holding-list{overflow-x:auto}
 a.primary-button,a.secondary-button{text-decoration:none}
+.bse-breadth-caption{display:block;margin-bottom:4px;color:#96a098;font:700 9px "DM Sans",sans-serif;letter-spacing:.7px}
 a.primary-button[hidden],a.secondary-button[hidden]{display:none}
 .page-nav-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
 #no-portfolios .primary-button{margin-top:10px}

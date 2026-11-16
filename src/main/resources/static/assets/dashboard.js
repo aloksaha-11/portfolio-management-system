@@ -265,17 +265,30 @@
     const declinesPct = ((declines / totalValid) * 100).toFixed(1);
     const unchangedPct = ((unchanged / totalValid) * 100).toFixed(1);
     const avgChange = countedForPct > 0 ? (sumPct / countedForPct).toFixed(2) : '0.00';
-    const isUp = advances >= declines;
 
-    // Badge
+    // Badge: follows the BSE Sensex. The Bhav Copy has no index values, so use the
+    // day's change of a Sensex-tracking ETF. If none is present, fall back to breadth.
     const badge = document.querySelector('#bse-trend-badge');
     const badgeText = document.querySelector('#bse-trend-text');
     const badgeIcon = document.querySelector('#bse-trend-icon');
     if (badge && badgeText && badgeIcon) {
+      const sensex = findSensexTracker(prices);
+      let isUp;
+      if (sensex) {
+        isUp = sensex.pct >= 0;
+        const sign = sensex.pct > 0 ? '+' : '';
+        badgeText.textContent = `BSE Sensex is ${isUp ? 'UP' : 'DOWN'} (${sign}${sensex.pct.toFixed(2)}%)`;
+        badge.title = `Based on ${sensex.symbol} (${sensex.name}), a Sensex-tracking ETF: `
+          + `₹${formatNumber(sensex.prev)} → ₹${formatNumber(sensex.close)}. `
+          + `The official Sensex change can differ slightly.`;
+      } else {
+        isUp = advances >= declines;
+        const sign = Number(avgChange) > 0 ? '+' : '';
+        badgeText.textContent = `Market breadth is ${isUp ? 'UP' : 'DOWN'} (${sign}${avgChange}% Avg)`;
+        badge.title = 'No Sensex ETF price found for this date; showing all-securities breadth instead.';
+      }
       badge.className = isUp ? 'bse-trend-badge up' : 'bse-trend-badge down';
       badgeIcon.textContent = isUp ? '▲' : '▼';
-      const sign = Number(avgChange) > 0 ? '+' : '';
-      badgeText.textContent = `Market is ${isUp ? 'UP' : 'DOWN'} (${sign}${avgChange}% Avg)`;
     }
 
     // Stats
@@ -332,6 +345,24 @@
         }
       });
     }
+  }
+
+  // Sensex-tracking ETFs in the BSE Bhav Copy, most liquid first
+  const SENSEX_TRACKERS = ['SENSEXBEES', 'SBISENSEX', 'HDFCSENSEX', 'SENSEXBETA'];
+
+  function findSensexTracker(prices) {
+    for (const symbol of SENSEX_TRACKERS) {
+      const row = prices.find((p) => p.symbol?.trim().toUpperCase() === symbol);
+      const close = Number(row?.closePrice);
+      const prev = Number(row?.previousClose);
+      if (row && Number.isFinite(close) && Number.isFinite(prev) && close > 0 && prev > 0) {
+        return {
+          symbol, name: row.companyName || symbol, close, prev,
+          pct: ((close - prev) / prev) * 100
+        };
+      }
+    }
+    return null;
   }
 
   function renderBsePrices() {
