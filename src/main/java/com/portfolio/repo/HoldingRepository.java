@@ -141,6 +141,22 @@ public class HoldingRepository {
         return jdbc.update("DELETE FROM holdings WHERE holding_id = ? AND owner_user_id = ?", holdingId, userId);
     }
 
+    public int recordPartialSale(long holdingId, long userId, BigDecimal soldUnits, BigDecimal remainingUnits) {
+        int inserted = jdbc.update("""
+                INSERT INTO sold_holdings (
+                    original_holding_id, owner_user_id, portfolio_id, investment_type,
+                    investment_name, ticker, units_owned, average_purchase_price, added_at
+                )
+                SELECT h.holding_id, h.owner_user_id, h.portfolio_id, h.investment_type,
+                       h.investment_name, h.ticker, ?, h.average_purchase_price, h.created_at
+                FROM holdings h
+                WHERE h.holding_id = ? AND h.owner_user_id = ?
+                """, soldUnits, holdingId, userId);
+        if (inserted == 0) return 0;
+        return jdbc.update("UPDATE holdings SET units_owned = ? WHERE holding_id = ? AND owner_user_id = ?",
+                remainingUnits, holdingId, userId);
+    }
+
     public Optional<Holding> findByIdAndOwner(long holdingId, long userId) {
         List<Holding> results = jdbc.query("""
                 SELECT h.holding_id, h.portfolio_id, h.investment_type, h.investment_name, h.ticker,

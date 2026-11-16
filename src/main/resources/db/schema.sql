@@ -92,7 +92,7 @@ CREATE TABLE portfolio_management_system.holdings (
     CONSTRAINT ck_holdings_units_positive CHECK (units_owned > 0),
     CONSTRAINT ck_holdings_purchase_price_nonnegative CHECK (average_purchase_price >= 0),
     CONSTRAINT ck_holdings_investment_type CHECK (investment_type IN (
-        'Bonds', 'Commodities-Gold', 'Commodities-Silver', 'Equity', 'Intraday', 'Stocks/Shares'
+        'Bonds', 'Commodities-Gold', 'Commodities-Silver', 'Mutual Funds', 'Stocks/Shares'
     ))
 ) ENGINE=InnoDB
   DEFAULT CHARACTER SET=utf8mb4
@@ -111,7 +111,7 @@ CREATE TABLE portfolio_management_system.sold_holdings (
     added_at TIMESTAMP(6) NOT NULL,
     sold_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     CONSTRAINT pk_sold_holdings PRIMARY KEY (sold_holding_id),
-    CONSTRAINT uq_sold_holdings_original UNIQUE (original_holding_id),
+    INDEX ix_sold_holdings_original (original_holding_id),
     CONSTRAINT fk_sold_holdings_portfolio_owner
         FOREIGN KEY (portfolio_id, owner_user_id) REFERENCES portfolios (portfolio_id, user_id)
         ON DELETE RESTRICT ON UPDATE RESTRICT,

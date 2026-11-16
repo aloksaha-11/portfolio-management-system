@@ -11,7 +11,7 @@ ALTER TABLE portfolio_management_system.holdings
 ALTER TABLE portfolio_management_system.holdings
     DROP INDEX uq_holdings_owner_details,
     ADD CONSTRAINT ck_holdings_investment_type CHECK (investment_type IN (
-        'Bonds', 'Commodities-Gold', 'Commodities-Silver', 'Equity', 'Intraday', 'Stocks/Shares'
+        'Bonds', 'Commodities-Gold', 'Commodities-Silver', 'Equity', 'Stocks/Shares'
     )),
     ADD CONSTRAINT uq_holdings_owner_details
         UNIQUE (owner_user_id, investment_type, normalized_investment_name, normalized_ticker,

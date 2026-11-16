@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class HoldingService {
     private static final Set<String> INVESTMENT_TYPES = Set.of(
-            "Bonds", "Commodities-Gold", "Commodities-Silver", "Equity", "Intraday", "Stocks/Shares");
+            "Bonds", "Commodities-Gold", "Commodities-Silver", "Mutual Funds", "Stocks/Shares");
     private final HoldingRepository holdings;
     private final PortfolioService portfolios;
 
@@ -82,8 +82,31 @@ public class HoldingService {
 
     @Transactional
     public void sell(long userId, long holdingId) {
-        if (holdings.moveToSoldByIdAndOwner(holdingId, userId) == 0) {
-            throw holdingNotFound();
+        sell(userId, holdingId, null);
+    }
+
+    @Transactional
+    public void sell(long userId, long holdingId, BigDecimal unitsToSell) {
+        Holding holding = holdings.findByIdAndOwner(holdingId, userId)
+                .orElseThrow(HoldingService::holdingNotFound);
+
+        BigDecimal currentUnits = holding.unitsOwned();
+        if (unitsToSell == null || unitsToSell.compareTo(currentUnits) == 0) {
+            if (holdings.moveToSoldByIdAndOwner(holdingId, userId) == 0) {
+                throw holdingNotFound();
+            }
+        } else {
+            if (unitsToSell.signum() <= 0) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_units", "Units to sell must be greater than zero.");
+            }
+            if (unitsToSell.compareTo(currentUnits) > 0) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "invalid_units",
+                        "Cannot sell more units than currently owned (" + currentUnits.stripTrailingZeros().toPlainString() + ").");
+            }
+            BigDecimal remainingUnits = currentUnits.subtract(unitsToSell);
+            if (holdings.recordPartialSale(holdingId, userId, unitsToSell, remainingUnits) == 0) {
+                throw holdingNotFound();
+            }
         }
     }
 

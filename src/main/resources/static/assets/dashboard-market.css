@@ -11,6 +11,17 @@
 .sold-holdings-section{margin-top:22px;padding-top:17px;border-top:1px solid #e8eee9}
 .sold-holdings-section h3{margin:0 0 9px;color:#68766d;font:700 10px "DM Sans",sans-serif;letter-spacing:1px}
 .sold-holding-list{overflow-x:auto}
+a.primary-button,a.secondary-button{text-decoration:none}
+a.primary-button[hidden],a.secondary-button[hidden]{display:none}
+.page-nav-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+#no-portfolios .primary-button{margin-top:10px}
+.sold-heading-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.sold-heading-row h3{margin:0}
+.sold-filter{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:600 11px "DM Sans",sans-serif;color:#68766d}
+.sold-filter input[type="date"]{padding:5px 7px;border:1px solid #dbe3dc;border-radius:5px;background:#fff;color:#26332b;font:500 11px "DM Sans",sans-serif}
+.sold-filter .sold-recent-button{padding:6px 10px;font-size:11px}
+.sold-filter-caption{margin:0 0 6px;color:#89958c;font-size:10px}
+.sold-filter-caption.error{color:#b4483c}
 .sold-holding-row{display:grid;grid-template-columns:minmax(170px,1.5fr) minmax(70px,.6fr) repeat(3,minmax(105px,.9fr)) minmax(105px,.9fr);gap:12px;align-items:center;padding:11px 5px;border-top:1px solid #edf0ed}
 .sold-holding-row.header{padding:8px 5px;border-top:0;color:#96a098;font-size:9px;font-weight:700;letter-spacing:.7px}
 .sold-holding-row .holding-value{white-space:nowrap}
@@ -64,5 +75,33 @@
 .bse-data-table th:first-child,.bse-data-table td:first-child{text-align:left}
 .bse-data-table th{position:sticky;top:0;background:#f7faf7;color:#718077;font-size:9px;letter-spacing:.5px;text-transform:uppercase}
 .bse-data-table tbody tr:hover{background:#f8fbf8}
+.sell-modal{padding:0;border:1px solid #dce5dd;border-radius:14px;background:#fff;box-shadow:0 16px 40px rgba(0,0,0,.16);width:min(460px,92vw);margin:auto}
+.sell-modal::backdrop{background:rgba(25,38,29,.45);backdrop-filter:blur(2px)}
+.sell-form{padding:24px 26px;display:flex;flex-direction:column;gap:16px}
+.sell-modal-header{display:flex;align-items:flex-start;justify-content:space-between}
+.sell-modal-header h3{margin:3px 0 0;font:700 18px Manrope,sans-serif;color:#29382e}
+.sell-modal-close{background:none;border:none;font-size:16px;color:#8c9790;cursor:pointer;padding:4px 8px;border-radius:4px}
+.sell-modal-close:hover{color:#29382e;background:#edf2ee}
+.sell-holding-summary{display:grid;grid-template-columns:1.4fr 1fr;gap:10px;padding:11px 14px;border-radius:8px;background:#f8faf8;border:1px solid #e7ece7}
+.sell-info-pill{display:flex;flex-direction:column;gap:2px}
+.sell-info-label{font-size:9px;font-weight:700;color:#8a968e;letter-spacing:.6px;text-transform:uppercase}
+.sell-info-pill strong{font-size:12px;color:#29382e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sell-options-group{display:flex;flex-direction:column;gap:8px}
+.sell-option-card{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid #e2eae3;border-radius:8px;cursor:pointer;background:#fff;transition:border-color .15s,background .15s}
+.sell-option-card:hover{border-color:#b7cebf;background:#fbfdfb}
+.sell-option-card input[type="radio"]{margin-top:3px;accent-color:#2e6e45;cursor:pointer}
+.sell-option-text{display:flex;flex-direction:column;gap:2px}
+.sell-option-text strong{font-size:12px;color:#29382e}
+.sell-option-text span{font-size:10px;color:#7a887e}
+.sell-partial-section{padding:12px 14px;border-radius:8px;background:#f7faf7;border:1px solid #e1ebe2;display:flex;flex-direction:column;gap:10px}
+.sell-partial-section .field{margin:0}
+.sell-input-row{display:flex;gap:8px}
+.sell-input-row input{flex:1;height:36px;padding:0 10px;border:1px solid #d8e2d9;border-radius:6px;font:600 12px Manrope,sans-serif;color:#29382e;background:#fff;outline:none}
+.sell-input-row input:focus{border-color:#79aa87;box-shadow:0 0 0 3px #edf6ef}
+.sell-max-btn{min-height:36px;padding:0 12px;font-size:11px}
+.sell-calculation-box{display:flex;justify-content:space-between;padding-top:8px;border-top:1px dashed #dbe5dc;font-size:11px;color:#65756a}
+.sell-calc-row strong{font-family:Manrope,sans-serif;color:#29382e}
+.sell-calc-row strong.text-green{color:#2e6e45}
+.sell-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
 @media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.holding-list{overflow-x:auto}.holding-row,.holding-row.header{min-width:960px}.sold-holding-list{overflow-x:auto}.sold-holding-row{min-width:760px}}
 @media(max-width:540px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card{min-width:0}.stat-card strong{font-size:17px}.bse-data-card .section-heading{flex-direction:column;align-items:stretch}.bse-data-tools{width:100%;gap:8px}.bse-data-search{width:auto;min-width:0;flex:1}.holding-row,.holding-row.header{min-width:760px;grid-template-columns:minmax(160px,1.4fr) repeat(5,minmax(0,1fr))}.holding-row>:last-child{grid-column:6}.column-units,.column-average{display:none}}

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f4">
+  <meta name="description" content="Holdings and sales for one of your Folio portfolios.">
+  <title>Portfolio details · Folio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/dashboard.css">
+  <link rel="stylesheet" href="assets/dashboard-market.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Folio home"><span class="brand-mark">f</span><span>folio</span></a>
+    <div class="account-actions"><span class="account-avatar" aria-hidden="true">f</span><span id="account-email" class="account-email">Loading account…</span><button id="logout-button" class="logout-button" type="button">Logout</button></div>
+  </header>
+
+  <main class="dashboard-shell">
+    <section class="page-nav-row">
+      <a class="secondary-button" href="dashboard.html"><span aria-hidden="true">←</span> Back to Dashboard</a>
+      <div class="portfolio-select-wrap">
+        <label for="details-portfolio">Portfolio</label>
+        <select id="details-portfolio"><option value="">Loading portfolios…</option></select>
+      </div>
+    </section>
+    <p id="page-message" class="dashboard-message" role="status" aria-live="polite"></p>
+
+    <section id="no-portfolios" class="content-card empty-state" hidden>
+      <h3>No portfolios yet</h3>
+      <p>Create a portfolio on the Dashboard first, then come back here to add investments.</p>
+      <a class="primary-button" href="dashboard.html">Go to Dashboard</a>
+    </section>
+
+    <section id="holdings-section" class="content-card holdings-card" aria-labelledby="holdings-heading" hidden>
+      <div class="section-heading holdings-heading"><div><p class="eyebrow">PORTFOLIO DETAILS <span id="price-as-of" class="price-as-of">BSE closes loading</span></p><h2 id="holdings-heading">Holdings</h2></div><button id="add-holding-toggle" class="secondary-button" type="button">＋ Add investment</button></div>
+      <form id="holding-form" class="holding-form" hidden>
+        <div class="field"><label for="investment-type">Investment type</label><select id="investment-type" name="investmentType" required><option value="" selected disabled>Select a type</option><option>Bonds</option><option>Commodities-Gold</option><option>Commodities-Silver</option><option>Mutual Funds</option><option>Stocks/Shares</option></select></div>
+        <div class="field"><label for="company-name">Company name</label><input id="company-name" name="companyName" type="text" list="company-name-options" placeholder="Type to search companies" autocomplete="off" required><datalist id="company-name-options"></datalist><small>Type the first letters to filter BSE company names.</small></div>
+        <div class="field"><label for="ticker">BSE symbol or code <span>(optional)</span></label><select id="ticker" name="ticker"><option value="" selected>Choose a company or leave blank</option><option value="500325">Reliance Industries — 500325</option><option value="532540">Tata Consultancy Services — 532540</option><option value="500209">Infosys — 500209</option><option value="500875">ITC — 500875</option><option value="500112">State Bank of India — 500112</option></select><small id="ticker-help">Used to match the latest BSE closing price.</small></div>
+        <div class="field"><label for="units">Units owned</label><input id="units" name="unitsOwned" type="number" min="0.00000001" step="0.00000001" placeholder="0" required></div>
+        <div class="field"><label for="purchase-price">Average purchase price (₹)</label><input id="purchase-price" name="averagePurchasePrice" type="number" min="0" step="0.0001" placeholder="0.00" required></div>
+        <div class="holding-actions"><button class="primary-button" type="submit">Save investment</button><button class="cancel-button" id="cancel-holding" type="button">Cancel</button></div>
+      </form>
+      <p id="holding-message" class="dashboard-message" role="alert" aria-live="assertive"></p>
+      <div id="holding-list" class="holding-list"></div>
+      <p id="holdings-empty" class="holdings-empty" hidden>No investments recorded yet. Add your first holding to get started.</p>
+      <section class="sold-holdings-section" aria-labelledby="sold-holdings-heading">
+        <div class="sold-heading-row">
+          <h3 id="sold-holdings-heading">SOLD</h3>
+          <form id="sold-filter-form" class="sold-filter" novalidate>
+            <label for="sold-from-date">From</label>
+            <input id="sold-from-date" type="date" required>
+            <label for="sold-to-date">To</label>
+            <input id="sold-to-date" type="date" required>
+            <button type="submit" class="holding-sell">Show</button>
+            <button type="button" id="sold-show-recent" class="cancel-button sold-recent-button">Last 5</button>
+          </form>
+        </div>
+        <p id="sold-filter-caption" class="sold-filter-caption" role="status" aria-live="polite"></p>
+        <div id="sold-holding-list" class="sold-holding-list"></div>
+        <p id="sold-holdings-empty" class="holdings-empty">No holdings sold from this portfolio yet.</p>
+      </section>
+    </section>
+    <footer class="dashboard-footer"><span>© 2026 Folio</span><span>A clearer view of what you own.</span></footer>
+  </main>
+
+  <dialog id="sell-modal" class="sell-modal">
+    <form id="sell-form" class="sell-form" method="dialog">
+      <div class="sell-modal-header">
+        <div>
+          <p class="eyebrow">SELL INVESTMENT</p>
+          <h3 id="sell-modal-title">Sell shares</h3>
+        </div>
+        <button type="button" id="sell-modal-close" class="sell-modal-close" aria-label="Close dialog">✕</button>
+      </div>
+
+      <div class="sell-holding-summary">
+        <div class="sell-info-pill">
+          <span class="sell-info-label">Investment</span>
+          <strong id="sell-investment-name">—</strong>
+        </div>
+        <div class="sell-info-pill">
+          <span class="sell-info-label">Shares Owned</span>
+          <strong id="sell-available-units">—</strong>
+        </div>
+      </div>
+
+      <div class="sell-options-group">
+        <label class="sell-option-card" id="sell-card-all">
+          <input type="radio" name="sellType" value="all" id="sell-opt-all" checked>
+          <div class="sell-option-text">
+            <strong>Sell all shares</strong>
+            <span id="sell-all-desc">Sell all units and move holding to SOLD</span>
+          </div>
+        </label>
+        <label class="sell-option-card" id="sell-card-partial">
+          <input type="radio" name="sellType" value="partial" id="sell-opt-partial">
+          <div class="sell-option-text">
+            <strong>Sell less than total shares</strong>
+            <span>Sell a specific number of units and keep the balance</span>
+          </div>
+        </label>
+      </div>
+
+      <div id="sell-partial-section" class="sell-partial-section" hidden>
+        <div class="field">
+          <label for="sell-units-input">Number of shares / units to sell</label>
+          <div class="sell-input-row">
+            <input id="sell-units-input" type="number" min="0.00000001" step="any" placeholder="Enter units to sell">
+            <button type="button" id="sell-max-btn" class="secondary-button sell-max-btn">All</button>
+          </div>
+        </div>
+        <div class="sell-calculation-box">
+          <div class="sell-calc-row">
+            <span>Selling:</span>
+            <strong id="sell-calc-sold">0 units</strong>
+          </div>
+          <div class="sell-calc-row">
+            <span>Remaining balance:</span>
+            <strong id="sell-calc-remaining" class="text-green">—</strong>
+          </div>
+        </div>
+      </div>
+
+      <p id="sell-dialog-error" class="dashboard-message" role="alert"></p>
+
+      <div class="sell-modal-actions">
+        <button type="button" id="sell-cancel-btn" class="cancel-button">Cancel</button>
+        <button type="submit" id="sell-submit-btn" class="primary-button">Confirm sale</button>
+      </div>
+    </form>
+  </dialog>
+  <script src="assets/common.js" defer></script>
+  <script src="assets/portfolio-details.js" defer></script>
+</body>
+</html>

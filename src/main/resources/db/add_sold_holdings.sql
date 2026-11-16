@@ -12,7 +12,7 @@ CREATE TABLE portfolio_management_system.sold_holdings (
     added_at TIMESTAMP(6) NOT NULL,
     sold_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     CONSTRAINT pk_sold_holdings PRIMARY KEY (sold_holding_id),
-    CONSTRAINT uq_sold_holdings_original UNIQUE (original_holding_id),
+    INDEX ix_sold_holdings_original (original_holding_id),
     CONSTRAINT fk_sold_holdings_portfolio_owner
         FOREIGN KEY (portfolio_id, owner_user_id) REFERENCES portfolio_management_system.portfolios (portfolio_id, user_id)
         ON DELETE RESTRICT ON UPDATE RESTRICT,

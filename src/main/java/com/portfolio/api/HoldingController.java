@@ -1,5 +1,6 @@
 package com.portfolio.api;
 
+import java.math.BigDecimal;
 import java.util.List;
 import com.portfolio.application.Holding;
 import com.portfolio.application.HoldingService;
@@ -67,8 +68,12 @@ public class HoldingController {
     @PostMapping("/api/holdings/{holdingId}/sell")
     public ResponseEntity<Void> sell(
             @AuthenticationPrincipal UserPrincipal user,
-            @PathVariable("holdingId") long holdingId) {
-        holdings.sell(user.userId(), holdingId);
+            @PathVariable("holdingId") long holdingId,
+            @RequestBody(required = false) SellHoldingRequest request) {
+        BigDecimal units = request == null ? null : request.units();
+        holdings.sell(user.userId(), holdingId, units);
         return ResponseEntity.noContent().build();
     }
+
+    public record SellHoldingRequest(BigDecimal units) {}
 }
