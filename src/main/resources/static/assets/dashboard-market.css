@@ -12,7 +12,26 @@
 .sold-holdings-section h3{margin:0 0 9px;color:#68766d;font:700 10px "DM Sans",sans-serif;letter-spacing:1px}
 .sold-holding-list{overflow-x:auto}
 a.primary-button,a.secondary-button{text-decoration:none}
-.welcome-plan-link{margin-top:14px}
+.welcome-plan-link{margin-top:10px}
+/* Compact "YOUR MONEY, IN FOCUS" welcome section */
+.welcome-row{min-height:0;margin:20px 0 16px;padding:20px 32px}
+.welcome-row h1{font-size:clamp(22px,2.2vw,28px);letter-spacing:-.8px}
+.welcome-copy{max-width:640px;margin-top:6px;line-height:1.5}
+@media(min-width:541px){.welcome-art{width:120px;height:80px;margin-right:12px}.welcome-art svg{width:96px}}
+@media(max-width:540px){.welcome-row{padding:18px}}/* Compact "Your portfolios" section */
+.portfolios-card{padding:14px 20px}
+.portfolios-card .section-heading{align-items:center}
+.portfolios-card .section-heading .eyebrow{margin-bottom:3px}
+.portfolios-card .section-heading h2{font-size:16px}
+.portfolios-card .portfolio-actions{align-items:center;gap:10px}
+.portfolios-card .portfolio-select-wrap:not([hidden]){display:flex;align-items:center;gap:8px}
+.portfolios-card .portfolio-select-wrap label{margin:0;white-space:nowrap}
+.portfolios-card .portfolio-select-wrap select{height:32px}
+.portfolios-card .primary-button{min-height:32px}
+.portfolios-card .portfolio-grid{margin-top:10px}
+.portfolios-card .create-form{margin-top:12px;padding:12px}
+.portfolios-card .dashboard-message:empty{display:none}
+@media(max-width:540px){.portfolios-card .portfolio-select-wrap:not([hidden]){flex-direction:column;align-items:stretch}}
 .portfolio-grid{grid-template-columns:repeat(auto-fill,minmax(160px,200px))}
 .portfolio-card{display:block;min-height:0;padding:10px 12px;text-decoration:none;color:inherit}
 .portfolio-card .portfolio-card-icon{width:24px;height:24px;font-size:12px;border-radius:6px}
