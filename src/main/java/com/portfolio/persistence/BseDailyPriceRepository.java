@@ -162,6 +162,26 @@ public class BseDailyPriceRepository {
         });
     }
 
+    /** One security's close vs previous close on a trade date. */
+    public record DailyChange(java.time.LocalDate tradeDate, java.math.BigDecimal previousClose,
+                              java.math.BigDecimal closePrice) {
+    }
+
+    /** The most recent {@code days} daily changes for a BSE symbol, newest first. */
+    public List<DailyChange> findRecentChanges(String symbol, int days) {
+        return jdbc.query("""
+                SELECT trade_date, previous_close, close_price
+                FROM bse_daily_prices
+                WHERE bse_symbol = ? AND previous_close > 0
+                ORDER BY trade_date DESC
+                LIMIT ?
+                """, (result, row) -> new DailyChange(
+                        result.getDate("trade_date").toLocalDate(),
+                        result.getBigDecimal("previous_close"),
+                        result.getBigDecimal("close_price")),
+                symbol, days);
+    }
+
     public List<java.time.LocalDate> findDistinctTradeDates() {
         return jdbc.query("""
                 SELECT DISTINCT trade_date

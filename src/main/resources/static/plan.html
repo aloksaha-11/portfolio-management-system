@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f4">
+  <meta name="description" content="Create your own investment plan with Folio.">
+  <title>Create your own plan · Folio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/dashboard.css">
+  <link rel="stylesheet" href="assets/dashboard-market.css">
+  <link rel="stylesheet" href="assets/plan.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Folio home"><span class="brand-mark">f</span><span>folio</span></a>
+    <div class="account-actions"><span class="account-avatar" aria-hidden="true">f</span><span id="account-email" class="account-email">Loading account…</span><button id="logout-button" class="logout-button" type="button">Logout</button></div>
+  </header>
+
+  <main class="dashboard-shell">
+    <section class="page-nav-row">
+      <a class="secondary-button" href="dashboard.html"><span aria-hidden="true">←</span> Back to Dashboard</a>
+    </section>
+    <p id="page-message" class="dashboard-message" role="status" aria-live="polite"></p>
+
+    <section class="content-card" aria-labelledby="plan-heading">
+      <div class="section-heading"><div><p class="eyebrow">PLAN YOUR NEXT INVESTMENT</p><h2 id="plan-heading">Create your own plan</h2></div></div>
+      <p class="plan-intro">Enter what you have invested today and how much you can invest now. Folio suggests how to split your budget across the five asset classes.</p>
+
+      <form id="plan-form" class="plan-form" novalidate>
+        <div class="plan-table" role="group" aria-labelledby="current-heading">
+          <div class="plan-table-head">
+            <h3 id="current-heading">What you have invested today</h3>
+            <button id="fill-from-holdings" class="secondary-button" type="button">Fill from my holdings</button>
+          </div>
+          <div class="plan-row plan-row-header"><span>ASSET CLASS</span><span>AMOUNT INVESTED (₹)</span><span>SHARE OF TOTAL</span></div>
+          <div class="plan-row"><label for="current-shares">Shares</label><input id="current-shares" data-asset="shares" type="number" min="0" step="0.01" placeholder="0" inputmode="decimal"><span class="plan-pct" data-pct="shares">0%</span></div>
+          <div class="plan-row"><label for="current-bonds">Bonds</label><input id="current-bonds" data-asset="bonds" type="number" min="0" step="0.01" placeholder="0" inputmode="decimal"><span class="plan-pct" data-pct="bonds">0%</span></div>
+          <div class="plan-row"><label for="current-gold">Commodities-Gold</label><input id="current-gold" data-asset="gold" type="number" min="0" step="0.01" placeholder="0" inputmode="decimal"><span class="plan-pct" data-pct="gold">0%</span></div>
+          <div class="plan-row"><label for="current-silver">Commodities-Silver</label><input id="current-silver" data-asset="silver" type="number" min="0" step="0.01" placeholder="0" inputmode="decimal"><span class="plan-pct" data-pct="silver">0%</span></div>
+          <div class="plan-row"><label for="current-mutualFunds">Mutual Funds</label><input id="current-mutualFunds" data-asset="mutualFunds" type="number" min="0" step="0.01" placeholder="0" inputmode="decimal"><span class="plan-pct" data-pct="mutualFunds">0%</span></div>
+          <div class="plan-row plan-row-total"><span>Total invested</span><strong id="current-total">₹0.00</strong><span>100%</span></div>
+          <p id="fill-message" class="plan-hint" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="plan-options">
+          <div class="field"><label for="plan-budget">Total budget you can invest now (₹)</label><input id="plan-budget" type="number" min="1" step="0.01" placeholder="For example, 100000" inputmode="decimal" required></div>
+          <div class="field"><label for="plan-risk">Risk appetite</label><select id="plan-risk"><option value="CONSERVATIVE">Conservative: protect my money</option><option value="MODERATE" selected>Moderate: balance growth and safety</option><option value="AGGRESSIVE">Aggressive: aim for higher growth</option></select></div>
+          <button class="primary-button plan-submit" type="submit">Suggest my plan</button>
+        </div>
+        <p id="plan-error" class="dashboard-message" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="plan-result" class="content-card" aria-labelledby="result-heading" hidden>
+      <div class="section-heading"><div><p class="eyebrow">SUGGESTED PLAN</p><h2 id="result-heading">How to invest your budget</h2></div><span id="result-budget" class="plan-budget-pill"></span></div>
+      <div class="plan-result-table">
+        <div class="plan-result-row plan-row-header"><span>ASSET CLASS</span><span>INVEST NOW</span><span>MIX TODAY</span><span>TARGET MIX</span><span>MIX AFTER</span></div>
+        <div id="result-rows"></div>
+      </div>
+      <h3 class="plan-subheading">Why this split</h3>
+      <ul id="result-reasons" class="plan-reasons"></ul>
+      <p class="plan-disclaimer">This suggestion comes from fixed rules based on your risk appetite and the recent Sensex trend. It is not AI and not financial advice, and it cannot guarantee profit. Prices can go down as well as up, so consider speaking to a registered financial adviser before investing.</p>
+    </section>
+
+    <section class="content-card" aria-labelledby="history-heading">
+      <div class="section-heading"><div><p class="eyebrow">SAVED AUTOMATICALLY</p><h2 id="history-heading">Your recent plans</h2></div></div>
+      <div id="history-list" class="plan-history"></div>
+      <p id="history-empty" class="holdings-empty">No plans yet. Your plans will appear here after you create them.</p>
+    </section>
+    <footer class="dashboard-footer"><span>© 2026 Folio</span><span>A clearer view of what you own.</span></footer>
+  </main>
+  <script src="assets/common.js" defer></script>
+  <script src="assets/plan.js" defer></script>
+</body>
+</html>

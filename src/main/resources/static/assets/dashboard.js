@@ -11,7 +11,6 @@
   const createName = document.querySelector('#portfolio-name');
   const portfolioSelectWrap = document.querySelector('#portfolio-select-wrap');
   const existingPortfolioSelect = document.querySelector('#existing-portfolio');
-  const portfolioDetailsLink = document.querySelector('#portfolio-details-link');
   const bseDataBody = document.querySelector('#bse-data-body');
   const bseDataMessage = document.querySelector('#bse-data-message');
   const bseDataCount = document.querySelector('#bse-data-count');
@@ -91,7 +90,7 @@
         createForm.hidden = true;
         selectPortfolio(created.portfolioId);
         updateSummary();
-        showMessage('Your portfolio is ready. Click Portfolio Details to add investments.', 'success');
+        showMessage('Your portfolio is ready. Click its box below to add investments.', 'success');
       } catch (error) {
         showMessage(error.message || 'We could not create that portfolio. Please try again.');
       }
@@ -102,18 +101,17 @@
     portfolioList.replaceChildren();
     emptyState.hidden = portfolios.length !== 0;
     portfolioSelectWrap.hidden = portfolios.length === 0;
-    portfolioDetailsLink.hidden = portfolios.length === 0;
-    portfolioDetailsLink.href = portfolioDetailsUrl(selectedPortfolioId);
     existingPortfolioSelect.replaceChildren(new Option('Choose a portfolio', ''));
     portfolios.forEach((portfolio) => {
       existingPortfolioSelect.add(new Option(portfolio.name, String(portfolio.portfolioId)));
     });
     existingPortfolioSelect.value = selectedPortfolioId === null ? '' : String(selectedPortfolioId);
     portfolios.forEach((portfolio) => {
-      const card = document.createElement('button');
-      card.type = 'button';
+      // Each card opens that portfolio's details page
+      const card = document.createElement('a');
+      card.href = portfolioDetailsUrl(portfolio.portfolioId);
       card.className = `portfolio-card${portfolio.portfolioId === selectedPortfolioId ? ' selected' : ''}`;
-      card.setAttribute('aria-pressed', String(portfolio.portfolioId === selectedPortfolioId));
+      card.title = `Open ${portfolio.name} details`;
       const top = document.createElement('span');
       top.className = 'portfolio-card-top';
       const icon = document.createElement('span');
@@ -127,12 +125,11 @@
       const name = document.createElement('strong');
       name.textContent = portfolio.name;
       card.append(top, name);
-      card.addEventListener('click', () => selectPortfolio(portfolio.portfolioId));
       portfolioList.append(card);
     });
   }
 
-  // Selecting a portfolio highlights it; the Portfolio Details button then opens that portfolio
+  // Selecting a portfolio (via the dropdown) highlights its card; advisory buttons use it
   function selectPortfolio(portfolioId) {
     selectedPortfolioId = portfolioId;
     renderPortfolios();
