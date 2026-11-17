@@ -12,13 +12,25 @@
 .sold-holdings-section h3{margin:0 0 9px;color:#68766d;font:700 10px "DM Sans",sans-serif;letter-spacing:1px}
 .sold-holding-list{overflow-x:auto}
 a.primary-button,a.secondary-button{text-decoration:none}
-.welcome-plan-link{margin-top:10px}
+/* "Create your own plan" box next to the portfolio boxes */
+.portfolio-card.plan-card{border:1px solid #71a883;background:#f6faf7}
+.portfolio-card.plan-card:hover{border-color:#548365;background:#edf6ef}
+.portfolio-card.plan-card .portfolio-card-icon{background:#2f6b45;color:#fff}
+.portfolio-card.plan-card strong{color:#2f6b45}
 /* Compact "YOUR MONEY, IN FOCUS" welcome section */
 .welcome-row{min-height:0;margin:20px 0 16px;padding:20px 32px}
 .welcome-row h1{font-size:clamp(22px,2.2vw,28px);letter-spacing:-.8px}
 .welcome-copy{max-width:640px;margin-top:6px;line-height:1.5}
 @media(min-width:541px){.welcome-art{width:120px;height:80px;margin-right:12px}.welcome-art svg{width:96px}}
-@media(max-width:540px){.welcome-row{padding:18px}}/* Compact "Your portfolios" section */
+@media(max-width:540px){.welcome-row{padding:18px}}
+/* Welcome text and "Your portfolios" merged into one section */
+.welcome-row.welcome-merged{flex-direction:column;align-items:stretch}
+.welcome-top{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.portfolios-card.welcome-portfolios{margin-top:16px;padding:14px 0 0;border-top:1px solid #e3ece5}
+/* Portfolio boxes, plan box, dropdown and New portfolio in one row with equal 24px gaps */
+.portfolios-row{display:flex;flex-wrap:wrap;align-items:center;gap:24px;margin-top:10px}
+.welcome-portfolios .portfolios-row .portfolio-grid,.welcome-portfolios .portfolios-row .portfolio-actions{display:contents}
+/* Compact "Your portfolios" section */
 .portfolios-card{padding:14px 20px}
 .portfolios-card .section-heading{align-items:center}
 .portfolios-card .section-heading .eyebrow{margin-bottom:3px}
@@ -130,3 +142,15 @@ a.primary-button[hidden],a.secondary-button[hidden]{display:none}
 .sell-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
 @media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.holding-list{overflow-x:auto}.holding-row,.holding-row.header{min-width:960px}.sold-holding-list{overflow-x:auto}.sold-holding-row{min-width:760px}}
 @media(max-width:540px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card{min-width:0}.stat-card strong{font-size:17px}.bse-data-card .section-heading{flex-direction:column;align-items:stretch}.bse-data-tools{width:100%;gap:8px}.bse-data-search{width:auto;min-width:0;flex:1}.holding-row,.holding-row.header{min-width:760px;grid-template-columns:minmax(160px,1.4fr) repeat(5,minmax(0,1fr))}.holding-row>:last-child{grid-column:6}.column-units,.column-average{display:none}}
+/* Portfolio boxes and "Create your own plan" styled like the "+ New portfolio" button */
+.portfolios-row .portfolio-card,.portfolios-row .portfolio-card.plan-card{flex:none;display:inline-flex;align-items:center;gap:7px;box-sizing:border-box;min-height:32px;padding:0 12px;border:1px solid transparent;border-radius:7px;background:var(--green);color:#fff;font:600 11px "DM Sans",sans-serif;text-decoration:none;transition:background .16s,transform .16s}
+.portfolios-row .portfolio-card:hover,.portfolios-row .portfolio-card.plan-card:hover{transform:translateY(-1px);border-color:transparent;background:#1d5a3c}
+.portfolios-row .portfolio-card .portfolio-card-top{display:contents}
+.portfolios-row .portfolio-card .portfolio-card-currency{display:none}
+.portfolios-row .portfolio-card .portfolio-card-icon{width:auto;height:auto;background:none;color:#fff;font-size:11px;border-radius:0}
+.portfolios-row .portfolio-card strong,.portfolios-row .portfolio-card.plan-card strong{margin:0;color:#fff;font:600 11px "DM Sans",sans-serif;white-space:nowrap}
+/* Row order: portfolio boxes, dropdown, + New portfolio, Create your own plan (all 24px apart) */
+.portfolios-row .portfolio-select-wrap{order:1}
+.portfolios-row #show-create{order:2}
+.portfolios-row .portfolio-card.plan-card{order:3}
+.portfolios-row .portfolio-card{order:0}

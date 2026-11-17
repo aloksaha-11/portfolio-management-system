@@ -127,6 +127,29 @@
       card.append(top, name);
       portfolioList.append(card);
     });
+    portfolioList.append(createPlanCard());
+  }
+
+  // "Create your own plan" box shown after the portfolio boxes
+  function createPlanCard() {
+    const card = document.createElement('a');
+    card.href = 'plan.html';
+    card.className = 'portfolio-card plan-card';
+    card.title = 'Plan how to split your next investment';
+    const top = document.createElement('span');
+    top.className = 'portfolio-card-top';
+    const icon = document.createElement('span');
+    icon.className = 'portfolio-card-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '＋';
+    const tag = document.createElement('span');
+    tag.className = 'portfolio-card-currency';
+    tag.textContent = 'PLAN';
+    top.append(icon, tag);
+    const name = document.createElement('strong');
+    name.textContent = 'Create your own plan';
+    card.append(top, name);
+    return card;
   }
 
   // Selecting a portfolio (via the dropdown) highlights its card; advisory buttons use it

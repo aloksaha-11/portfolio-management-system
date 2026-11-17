@@ -101,7 +101,7 @@
     window.history.replaceState(null, '', portfolioDetailsUrl(portfolioId));
     const selected = portfolios.find((p) => p.portfolioId === portfolioId);
     document.querySelector('#holdings-heading').textContent = selected ? `${selected.name} holdings` : 'Holdings';
-    document.title = selected ? `${selected.name} · Portfolio details · Folio` : 'Portfolio details · Folio';
+    document.title = selected ? `${selected.name} · Portfolio details · Portfolio Rebalancing System` : 'Portfolio details · Portfolio Rebalancing System';
     clearHoldingMessage();
     holdingsSection.hidden = false;
     await reloadPortfolio();

@@ -40,8 +40,8 @@ public class PasswordResetMailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(settings.from());
         message.setTo(email);
-        message.setSubject("Reset your Folio password");
-        message.setText("A password reset was requested for your Folio account.\n\n"
+        message.setSubject("Reset your Portfolio Rebalancing System password");
+        message.setText("A password reset was requested for your Portfolio Rebalancing System account.\n\n"
                 + "Use this one-time link within 30 minutes to choose a new password:\n"
                 + resetLink + "\n\n"
                 + "If you did not request this, you can ignore this email. Your password will not change.");
