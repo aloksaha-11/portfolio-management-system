@@ -479,7 +479,11 @@
     const plotWidth = width - left - right;
     const plotHeight = height - top - bottom;
     const baseline = height - bottom;
-    const x = (index) => left + (points.length === 1 ? plotWidth / 2 : index * plotWidth / (points.length - 1));
+    // Space between the axes and the first and last points, so their % labels stay clear of the y-axis labels
+    const inset = 32;
+    const x = (index) => left + (points.length === 1
+      ? plotWidth / 2
+      : inset + index * (plotWidth - 2 * inset) / (points.length - 1));
     const y = (value) => top + (high - value) * plotHeight / (high - low);
 
     const svg = svgElement('svg', {
