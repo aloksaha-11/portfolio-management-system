@@ -22,8 +22,16 @@
 .plan-result-row>span:not(:first-child){text-align:right}
 .plan-result-row .plan-invest{font-weight:700;color:#2f6b45}
 .plan-result-row .plan-invest.zero{color:#96a098;font-weight:500}
-.plan-result-row.plan-row-header{border-top:0;padding:6px 4px;color:#96a098;font-size:9px;font-weight:700;letter-spacing:.7px}
+.plan-result-row.plan-row-header{border-top:0;padding:6px 4px;color:#96a098;font-size:9px;font-weight:700;letter-spacing:.7px;white-space:normal}
 .plan-result-row.plan-result-total{font-weight:700}
+.plan-projection-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 4px}
+.plan-projection-head .plan-subheading{margin:0}
+.plan-years{display:flex;align-items:center;gap:8px;color:#68766d;font-size:11px;font-weight:600}
+.plan-years select{height:30px;padding:0 8px;border:1px solid #dfe6e0;border-radius:6px;background:#fff;color:#26332b;font:500 12px "DM Sans",sans-serif}
+.plan-years select:focus{outline:2px solid #bdd7c4;border-color:#71a883}
+.plan-assumption-note{margin:0 0 6px;color:#8a6d2b;font-size:10px;line-height:1.5}
+.plan-result-row .plan-gain{font-weight:700;color:#2f6b45}
+.plan-projection-note{margin:8px 4px 0;color:#3f4d44;font-size:12px;line-height:1.5}
 .plan-reasons{margin:0;padding-left:18px;color:#3f4d44;font-size:12px;line-height:1.6}
 .plan-disclaimer{margin:16px 0 0;padding:10px 12px;border-radius:8px;background:#fdf8ef;border:1px solid #f0e2c4;color:#6b5320;font-size:11px;line-height:1.5}
 .plan-history{display:grid;gap:8px;margin-top:6px}

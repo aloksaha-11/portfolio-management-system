@@ -31,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
  *       proportion to each shortfall. Nothing is sold: classes already above target
  *       get nothing.</li>
  * </ol>
+ * Each result also carries the assumed yearly return per class (ASSUMED_RETURN_PERCENT), which
+ * the plan page uses to show an illustrative estimate of the value after N years.
  */
 @Service
 public class InvestmentPlanService {
@@ -41,6 +43,15 @@ public class InvestmentPlanService {
             "CONSERVATIVE", new int[] {10, 45, 15, 5, 25},
             "MODERATE", new int[] {30, 20, 15, 5, 30},
             "AGGRESSIVE", new int[] {45, 10, 10, 5, 30});
+
+    /**
+     * Assumed average yearly return in percent, order: shares, bonds, gold, silver, mutual funds.
+     * Rough long-run figures for India, used only for the illustrative "estimated value after N
+     * years" projection on the plan page. They are assumptions, not predictions, and play no
+     * part in how the budget is split.
+     */
+    private static final AssetAmounts ASSUMED_RETURN_PERCENT = new AssetAmounts(
+            new BigDecimal("12"), new BigDecimal("7"), new BigDecimal("8"), new BigDecimal("8"), new BigDecimal("10"));
 
     /** Sensex-tracking ETFs in the BSE Bhav Copy, most liquid first (same list as the Dashboard badge). */
     private static final List<String> SENSEX_TRACKERS = List.of("SENSEXBEES", "SBISENSEX", "HDFCSENSEX", "SENSEXBETA");
@@ -69,6 +80,7 @@ public class InvestmentPlanService {
             AssetAmounts targetPercent,
             AssetAmounts currentPercent,
             AssetAmounts resultingPercent,
+            AssetAmounts assumedReturnPercent,
             String marketSignal,
             List<String> reasons,
             Instant createdAt) {
@@ -123,7 +135,8 @@ public class InvestmentPlanService {
         }
         return new PlanResult(plan.planId(), plan.riskProfile(), plan.budget(), plan.current(), plan.suggested(),
                 AssetAmounts.of(targetPct), AssetAmounts.of(percentages(current)),
-                AssetAmounts.of(percentages(after)), plan.marketSignal(), plan.reasons(), plan.createdAt());
+                AssetAmounts.of(percentages(after)), ASSUMED_RETURN_PERCENT,
+                plan.marketSignal(), plan.reasons(), plan.createdAt());
     }
 
     /** DOWNTREND if a Sensex ETF fell on each of the last 3 trading days; UNKNOWN without enough data. */

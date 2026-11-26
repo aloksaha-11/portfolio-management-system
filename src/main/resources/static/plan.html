@@ -60,9 +60,21 @@
         <div class="plan-result-row plan-row-header"><span>ASSET CLASS</span><span>INVEST NOW</span><span>MIX TODAY</span><span>TARGET MIX</span><span>MIX AFTER</span></div>
         <div id="result-rows"></div>
       </div>
+      <div class="plan-projection-head">
+        <h3 id="projection-heading" class="plan-subheading">Estimated value, using assumed returns</h3>
+        <label class="plan-years" for="projection-years">Years
+          <select id="projection-years"><option value="1">1</option><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select>
+        </label>
+      </div>
+      <p class="plan-assumption-note">Assumption, not a prediction: each asset class is assumed to grow at a fixed average rate every year, compounded yearly. Real returns change from year to year and can be negative.</p>
+      <div class="plan-result-table" role="group" aria-labelledby="projection-heading">
+        <div class="plan-result-row plan-row-header"><span>ASSET CLASS</span><span>VALUE AFTER INVESTING</span><span>ASSUMED RETURN / YEAR</span><span id="projection-value-header">ESTIMATED VALUE</span><span>ESTIMATED GAIN</span></div>
+        <div id="projection-rows"></div>
+      </div>
+      <p id="projection-budget-note" class="plan-projection-note"></p>
       <h3 class="plan-subheading">Why this split</h3>
       <ul id="result-reasons" class="plan-reasons"></ul>
-      <p class="plan-disclaimer">This suggestion comes from fixed rules based on your risk appetite and the recent Sensex trend. It is not AI and not financial advice, and it cannot guarantee profit. Prices can go down as well as up, so consider speaking to a registered financial adviser before investing.</p>
+      <p class="plan-disclaimer">This suggestion comes from fixed rules based on your risk appetite and the recent Sensex trend. It is not AI and not financial advice, and it cannot guarantee profit. The estimated values use assumed yearly returns, not predictions of real returns. Prices can go down as well as up, so consider speaking to a registered financial adviser before investing.</p>
     </section>
 
     <section class="content-card" aria-labelledby="history-heading">

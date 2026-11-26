@@ -19,10 +19,13 @@
   const resultSection = document.querySelector('#plan-result');
   const historyList = document.querySelector('#history-list');
   const historyEmpty = document.querySelector('#history-empty');
+  const yearsSelect = document.querySelector('#projection-years');
   const amountInputs = new Map(ASSETS.map((a) => [a.key, document.querySelector(`#current-${a.key}`)]));
   let recentPlans = [];
+  let shownPlan = null;
 
   amountInputs.forEach((input) => input.addEventListener('input', updateCurrentShares));
+  yearsSelect.addEventListener('change', () => shownPlan && renderProjection(shownPlan));
   document.querySelector('#fill-from-holdings').addEventListener('click', fillFromHoldings);
   form.addEventListener('submit', createPlan);
 
@@ -140,11 +143,55 @@
     total.className = 'plan-result-row plan-result-total';
     total.append(span('Total'), span(formatCurrency(plan.budget), 'plan-invest'), span(''), span('100%'), span(''));
     rows.append(total);
+    shownPlan = plan;
+    renderProjection(plan);
     document.querySelector('#result-reasons').replaceChildren(...plan.reasons.map((reason) => {
       const li = document.createElement('li');
       li.textContent = reason;
       return li;
     }));
+  }
+
+  // Illustrative estimate only: compounds each class yearly at the server's assumed return
+  function renderProjection(plan) {
+    const years = Number(yearsSelect.value);
+    const yearsText = `${years} year${years === 1 ? '' : 's'}`;
+    document.querySelector('#projection-value-header').textContent = `ESTIMATED VALUE AFTER ${yearsText.toUpperCase()}`;
+    const rows = document.querySelector('#projection-rows');
+    rows.replaceChildren();
+    let totalNow = 0;
+    let totalLater = 0;
+    let budgetLater = 0;
+    ASSETS.forEach((asset) => {
+      const rate = Number(plan.assumedReturnPercent?.[asset.key]) || 0;
+      const growth = (1 + rate / 100) ** years;
+      const suggested = Number(plan.suggested[asset.key]) || 0;
+      const now = (Number(plan.current[asset.key]) || 0) + suggested;
+      const later = now * growth;
+      totalNow += now;
+      totalLater += later;
+      budgetLater += suggested * growth;
+      const row = document.createElement('div');
+      row.className = 'plan-result-row';
+      row.append(
+        span(asset.label),
+        span(formatCurrency(now)),
+        span(`${pct(rate)} (assumed)`),
+        span(formatCurrency(later)),
+        span(formatCurrency(later - now), 'plan-gain')
+      );
+      rows.append(row);
+    });
+    const total = document.createElement('div');
+    total.className = 'plan-result-row plan-result-total';
+    total.append(span('Total'), span(formatCurrency(totalNow)), span(''),
+      span(formatCurrency(totalLater)), span(formatCurrency(totalLater - totalNow), 'plan-gain'));
+    rows.append(total);
+    const budget = Number(plan.budget) || 0;
+    document.querySelector('#projection-budget-note').textContent =
+      `If these assumed returns hold, the new budget of ${formatCurrency(budget)} alone could grow to about `
+      + `${formatCurrency(budgetLater)} in ${yearsText}, an estimated gain of ${formatCurrency(budgetLater - budget)}. `
+      + 'This is an estimate based on assumptions, not a promise of profit.';
   }
 
   async function loadHistory() {
