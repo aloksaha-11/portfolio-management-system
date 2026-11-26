@@ -329,7 +329,7 @@
   }
 
   // Number of trading days shown in the trend chart
-  const WEEK_TREND_DAYS = 9;
+  const WEEK_TREND_DAYS = 10;
 
   // Colours of the daily-change line and of its up and down day markers
   const TREND_LINE_COLOR = '#3a6fc4';
@@ -348,7 +348,7 @@
       drawWeekTrend(days.map((day, index) => ({ day, row: findSensexRow(pricesByDay[index]) })));
       container.hidden = false;
     } catch (error) {
-      console.error('The 9-day BSE trend could not be drawn:', error);
+      console.error('The BSE trend could not be drawn:', error);
       container.hidden = true;
     }
   }
