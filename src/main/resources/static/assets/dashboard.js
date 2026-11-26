@@ -371,13 +371,10 @@
   // Number of trading days shown in the trend chart
   const WEEK_TREND_DAYS = 9;
 
-  // Open, High, Low and Close lines of the Sensex-tracking ETF, one colour each
-  const TREND_SERIES = [
-    { label: 'Open', field: 'openPrice', color: '#ed7d31' },
-    { label: 'High', field: 'highPrice', color: '#8c96a0' },
-    { label: 'Low', field: 'lowPrice', color: '#f0b400' },
-    { label: 'Close', field: 'closePrice', color: '#3a6fc4' }
-  ];
+  // Colours of the daily-change line and of its up and down day markers
+  const TREND_LINE_COLOR = '#3a6fc4';
+  const TREND_UP_COLOR = '#2d7a4d';
+  const TREND_DOWN_COLOR = '#c24141';
 
   // Loads the most recent trade dates and draws the Sensex ETF prices for each day.
   // dates is newest first, as the API returns it. Failures only hide the chart.
@@ -412,6 +409,10 @@
     return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
   }
 
+  function dayCount(count) {
+    return `${count} day${count === 1 ? '' : 's'}`;
+  }
+
   function statCard(label, value, detail, tone = '') {
     const card = document.createElement('div');
     card.className = 'bse-stat-card';
@@ -431,40 +432,33 @@
     return card;
   }
 
-  // Fills the summary panel beside the chart from the same days the chart shows
+  // Fills the summary panel beside the chart from the same daily % changes the chart shows
   function renderTrendStats(valid) {
     const stats = document.querySelector('#bse-week-trend-stats');
     if (!stats) return;
     stats.replaceChildren();
-    const days = valid.map((point) => ({
-      day: point.day,
-      row: point.row,
-      close: positiveNumber(point.row, 'closePrice'),
-      high: positiveNumber(point.row, 'highPrice'),
-      low: positiveNumber(point.row, 'lowPrice'),
-      change: dailyChange(point.row)
-    }));
+    const days = valid.map((point) => ({ day: point.day, change: dailyChange(point.row) }));
     const first = days[0];
     const latest = days[days.length - 1];
-    const highest = days.reduce((best, d) => (d.high > best.high ? d : best), days[0]);
-    const lowest = days.reduce((best, d) => (d.low < best.low ? d : best), days[0]);
-    const average = days.reduce((total, d) => total + d.close, 0) / days.length;
-    const biggestRise = days.reduce((best, d) => (d.change > best.change ? d : best), days[0]);
-    const biggestFall = days.reduce((best, d) => (d.change < best.change ? d : best), days[0]);
-    const upDays = days.filter((d) => d.change >= 0).length;
-    const overall = ((latest.close - first.close) / first.close) * 100;
+    const ups = days.filter((d) => d.change >= 0);
+    const downs = days.filter((d) => d.change < 0);
+    const average = (list) => list.reduce((total, d) => total + d.change, 0) / list.length;
+    // Daily changes compound, so the period change multiplies them rather than adding them
+    const overall = (days.reduce((growth, d) => growth * (1 + d.change / 100), 1) - 1) * 100;
+    const biggestRise = days.reduce((best, d) => (d.change > best.change ? d : best), first);
+    const biggestFall = days.reduce((best, d) => (d.change < best.change ? d : best), first);
     const tone = (value) => (value >= 0 ? 'up' : 'down');
+    const range = `${formatTradeDate(first.day)} – ${formatTradeDate(latest.day)}`;
 
     stats.append(
-      statCard('Latest close', `₹${formatNumber(latest.close)}`, formatTradeDate(latest.day)),
       statCard('Change on latest day', signed(latest.change), formatTradeDate(latest.day), tone(latest.change)),
-      statCard(`Change over ${days.length} days`, signed(overall), `since ${formatTradeDate(first.day)}`, tone(overall)),
-      statCard('Highest price', `₹${formatNumber(highest.high)}`, formatTradeDate(highest.day)),
-      statCard('Lowest price', `₹${formatNumber(lowest.low)}`, formatTradeDate(lowest.day)),
-      statCard('Average close', `₹${formatNumber(Number(average.toFixed(2)))}`),
-      statCard('Biggest rise', signed(biggestRise.change), formatTradeDate(biggestRise.day), 'up'),
-      statCard('Biggest fall', signed(biggestFall.change), formatTradeDate(biggestFall.day), 'down'),
-      statCard('Up / down days', `${upDays} / ${days.length - upDays}`)
+      statCard(`Change over ${days.length} days`, signed(overall), range, tone(overall)),
+      statCard('Average daily change', signed(average(days)), `over ${days.length} days`, tone(average(days))),
+      statCard('Up / down days', `${ups.length} / ${downs.length}`),
+      statCard('Biggest rise', signed(biggestRise.change), formatTradeDate(biggestRise.day), tone(biggestRise.change)),
+      statCard('Biggest fall', signed(biggestFall.change), formatTradeDate(biggestFall.day), tone(biggestFall.change)),
+      statCard('Average up day', ups.length ? signed(average(ups)) : '—', dayCount(ups.length), ups.length ? 'up' : ''),
+      statCard('Average down day', downs.length ? signed(average(downs)) : '—', dayCount(downs.length), downs.length ? 'down' : '')
     );
   }
   function positiveNumber(row, field) {
@@ -505,10 +499,7 @@
       return;
     }
 
-    const allValues = valid.flatMap((point) => TREND_SERIES
-      .map((series) => positiveNumber(point.row, series.field))
-      .filter((value) => value !== null));
-    const { ticks, step } = niceTicks(allValues, false);
+    const { ticks } = niceTicks(valid.map((point) => dailyChange(point.row)), true);
     const low = ticks[0];
     const high = ticks[ticks.length - 1];
 
@@ -522,7 +513,7 @@
     const width = 760;
     const height = 318;
     const left = 72;
-    const right = 150;
+    const right = 40;
     const top = 44;
     const bottom = 100;
     const plotWidth = width - left - right;
@@ -535,19 +526,21 @@
       viewBox: `0 0 ${width} ${height}`,
       class: 'bse-week-trend-svg',
       role: 'img',
-      'aria-label': `${summaryText}. Open, high, low and close prices of the Sensex-tracking ETF for each day.`
+      'aria-label': `${summaryText}. Percentage change of the Sensex against the previous day, for each day.`
     });
 
     svg.append(svgElement('text', {
       x: left + plotWidth / 2, y: 30, 'text-anchor': 'middle', class: 'chart-title'
-    }, 'BSE SENSEX ETF PRICES · LAST 9 TRADING DAYS'));
+    }, `BSE SENSEX DAILY CHANGE · LAST ${WEEK_TREND_DAYS} TRADING DAYS`));
 
-    // Solid horizontal grid lines with price labels
+    // Solid horizontal grid lines with percentage labels; the 0% line is drawn darker
     ticks.forEach((value) => {
-      svg.append(svgElement('line', { x1: left, x2: left + plotWidth, y1: y(value), y2: y(value), class: 'grid' }));
+      svg.append(svgElement('line', {
+        x1: left, x2: left + plotWidth, y1: y(value), y2: y(value), class: value === 0 ? 'zero-line' : 'grid'
+      }));
       svg.append(svgElement('text', {
         x: left - 10, y: y(value) + 4, 'text-anchor': 'end', class: 'axis'
-      }, formatNumber(value)));
+      }, `${sign(value)}${formatNumber(value)}%`));
     });
 
     // The y-axis and x-axis lines
@@ -563,7 +556,7 @@
     svg.append(svgElement('text', {
       x: 16, y: axisTitleY, 'text-anchor': 'middle', class: 'axis-title',
       transform: `rotate(-90 16 ${axisTitleY})`
-    }, 'Price (₹ per unit)'));
+    }, 'Percentage (%)'));
     // Dates under the x-axis, rotated like the reference chart
     points.forEach((point, index) => {
       const xPos = x(index);
@@ -574,36 +567,29 @@
       }, formatTradeDate(point.day)));
     });
 
-    // One line per price type, with a dot on each day that has a price
-    TREND_SERIES.forEach((series) => {
-      const coordinates = points
-        .map((point, index) => {
-          const value = positiveNumber(point.row, series.field);
-          return value === null ? null : { x: x(index), y: y(value), value, day: point.day };
-        })
-        .filter(Boolean);
-      if (coordinates.length > 1) {
-        svg.append(svgElement('polyline', {
-          points: coordinates.map((c) => `${c.x},${c.y}`).join(' '),
-          class: 'series',
-          stroke: series.color
-        }));
-      }
-      coordinates.forEach((c) => {
-        const dot = svgElement('circle', { cx: c.x, cy: c.y, r: 3.2, fill: series.color });
-        dot.append(svgElement('title', {}, `${formatTradeDate(c.day)} · ${series.label}: ₹${formatNumber(c.value)}`));
-        svg.append(dot);
-      });
-    });
-
-    // Legend on the right
-    const legendX = left + plotWidth + 26;
-    TREND_SERIES.forEach((series, index) => {
-      const legendY = top + 16 + index * 26;
-      svg.append(svgElement('line', {
-        x1: legendX, x2: legendX + 24, y1: legendY, y2: legendY, class: 'series', stroke: series.color
+    // One line through each day's change, with a green dot for up days and a red dot for down days
+    const coordinates = points
+      .map((point, index) => {
+        if (!point.row) return null;
+        const value = dailyChange(point.row);
+        return { x: x(index), y: y(value), value, day: point.day };
+      })
+      .filter(Boolean);
+    if (coordinates.length > 1) {
+      svg.append(svgElement('polyline', {
+        points: coordinates.map((c) => `${c.x},${c.y}`).join(' '),
+        class: 'series',
+        stroke: TREND_LINE_COLOR
       }));
-      svg.append(svgElement('text', { x: legendX + 32, y: legendY + 4, class: 'legend' }, series.label));
+    }
+    coordinates.forEach((c) => {
+      const color = c.value >= 0 ? TREND_UP_COLOR : TREND_DOWN_COLOR;
+      const dot = svgElement('circle', { cx: c.x, cy: c.y, r: 3.6, fill: color });
+      dot.append(svgElement('title', {}, `${formatTradeDate(c.day)} · ${signed(c.value)} vs previous day`));
+      svg.append(dot);
+      svg.append(svgElement('text', {
+        x: c.x, y: c.value >= 0 ? c.y - 9 : c.y + 16, 'text-anchor': 'middle', class: 'point-label', fill: color
+      }, signed(c.value)));
     });
 
     chart.append(svg);

@@ -167,6 +167,8 @@ a.primary-button[hidden],a.secondary-button[hidden]{display:none}
 .bse-week-trend-svg .chart-title{fill:#202823;font:700 13px "DM Sans",sans-serif;letter-spacing:.02em}
 .bse-week-trend-svg .grid{stroke:#e2e6e3;stroke-width:1}
 .bse-week-trend-svg .axis-line{stroke:#9aa39e;stroke-width:1}
+.bse-week-trend-svg .zero-line{stroke:#6f7a73;stroke-width:1.2}
+.bse-week-trend-svg .point-label{font:600 10px "DM Sans",sans-serif}
 .bse-week-trend-svg .tick{stroke:#9aa39e;stroke-width:1}
 .bse-week-trend-svg .series{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .bse-week-trend-svg .axis{fill:#4b5a51;font:500 11px "DM Sans",sans-serif}
