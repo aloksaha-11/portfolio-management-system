@@ -27,6 +27,10 @@ a.primary-button,a.secondary-button{text-decoration:none}
 .welcome-row.welcome-merged{flex-direction:column;align-items:stretch}
 .welcome-top{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .portfolios-card.welcome-portfolios{margin-top:16px;padding:14px 0 0;border-top:1px solid #e3ece5}
+.welcome-portfolios .stat-grid{margin:18px 0 0;padding-top:16px;border-top:1px solid #e3ece5}
+.welcome-portfolios .stat-card{min-height:104px;padding:14px 18px}
+.welcome-portfolios .stat-card strong{margin-top:8px}
+.welcome-portfolios .stat-icon{top:14px;right:16px}
 /* Portfolio boxes, plan box, dropdown and New portfolio in one row with equal 24px gaps */
 .portfolios-row{display:flex;flex-wrap:wrap;align-items:center;gap:24px;margin-top:10px}
 .welcome-portfolios .portfolios-row .portfolio-grid,.welcome-portfolios .portfolios-row .portfolio-actions{display:contents}
@@ -154,3 +158,28 @@ a.primary-button[hidden],a.secondary-button[hidden]{display:none}
 .portfolios-row #show-create{order:2}
 .portfolios-row .portfolio-card.plan-card{order:3}
 .portfolios-row .portfolio-card{order:0}
+/* 9-day Sensex trend chart */
+.bse-week-trend{margin:0 0 16px;padding:14px 18px 12px;background:#fff;border:1px solid #e5eee7;border-radius:12px}
+.bse-week-trend[hidden]{display:none}
+.bse-week-trend-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap;margin-bottom:4px}
+.bse-week-trend-head h3{margin:0}
+.bse-week-trend-svg{display:block;width:100%;max-width:760px;height:auto}
+.bse-week-trend-svg .chart-title{fill:#202823;font:700 13px "DM Sans",sans-serif;letter-spacing:.02em}
+.bse-week-trend-svg .grid{stroke:#e2e6e3;stroke-width:1}
+.bse-week-trend-svg .axis-line{stroke:#9aa39e;stroke-width:1}
+.bse-week-trend-svg .tick{stroke:#9aa39e;stroke-width:1}
+.bse-week-trend-svg .series{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.bse-week-trend-svg .axis{fill:#4b5a51;font:500 11px "DM Sans",sans-serif}
+.bse-week-trend-svg .axis-title{fill:#4b5a51;font:600 11px "DM Sans",sans-serif}
+.bse-week-trend-svg .legend{fill:#202823;font:500 12px "DM Sans",sans-serif}
+.bse-week-trend-note{margin:6px 0 0;color:var(--muted);font-size:11px}
+.bse-week-trend-body{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.bse-week-trend-body .bse-week-trend-chart{flex:1 1 460px;min-width:0}
+.bse-week-trend-stats{flex:0 0 250px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;padding-top:8px}
+.bse-stat-card{display:flex;flex-direction:column;gap:2px;padding:9px 11px;background:#fbfdfb;border:1px solid #e5eee7;border-radius:8px;min-width:0}
+.bse-stat-label{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.bse-stat-value{font:700 15px "DM Sans",sans-serif;color:#202823;white-space:nowrap}
+.bse-stat-value.up{color:#2d7a4d}
+.bse-stat-value.down{color:#c24141}
+.bse-stat-detail{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:640px){.bse-week-trend-stats{flex-basis:100%;grid-template-columns:1fr 1fr}}

@@ -208,6 +208,7 @@
           }
           selectedTradeDate = toIsoDateString(dates[0]);
           if (bseDateSelect) bseDateSelect.value = selectedTradeDate;
+          renderWeekTrend(dates);
         } else {
           if (bseDateSelect) {
             bseDateSelect.replaceChildren();
@@ -367,24 +368,272 @@
     }
   }
 
+  // Number of trading days shown in the trend chart
+  const WEEK_TREND_DAYS = 9;
+
+  // Open, High, Low and Close lines of the Sensex-tracking ETF, one colour each
+  const TREND_SERIES = [
+    { label: 'Open', field: 'openPrice', color: '#ed7d31' },
+    { label: 'High', field: 'highPrice', color: '#8c96a0' },
+    { label: 'Low', field: 'lowPrice', color: '#f0b400' },
+    { label: 'Close', field: 'closePrice', color: '#3a6fc4' }
+  ];
+
+  // Loads the most recent trade dates and draws the Sensex ETF prices for each day.
+  // dates is newest first, as the API returns it. Failures only hide the chart.
+  async function renderWeekTrend(dates) {
+    const container = document.querySelector('#bse-week-trend');
+    if (!container) return;
+    const days = dates.slice(0, WEEK_TREND_DAYS).map((date) => toIsoDateString(date)).reverse();
+    try {
+      const pricesByDay = await Promise.all(days.map((day) =>
+        api(`api/market-data/bse/by-date?tradeDate=${encodeURIComponent(day)}`)));
+      drawWeekTrend(days.map((day, index) => ({ day, row: findSensexRow(pricesByDay[index]) })));
+      container.hidden = false;
+    } catch (error) {
+      console.error('The 9-day BSE trend could not be drawn:', error);
+      container.hidden = true;
+    }
+  }
+
+  function svgElement(tag, attributes = {}, text = null) {
+    const element = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
+    if (text !== null) element.textContent = text;
+    return element;
+  }
+
+  // Percentage change of a day's close against the previous close
+  function dailyChange(row) {
+    return ((Number(row.closePrice) - Number(row.previousClose)) / Number(row.previousClose)) * 100;
+  }
+
+  function signed(value) {
+    return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+  }
+
+  function statCard(label, value, detail, tone = '') {
+    const card = document.createElement('div');
+    card.className = 'bse-stat-card';
+    const labelElement = document.createElement('span');
+    labelElement.className = 'bse-stat-label';
+    labelElement.textContent = label;
+    const valueElement = document.createElement('span');
+    valueElement.className = `bse-stat-value ${tone}`.trim();
+    valueElement.textContent = value;
+    card.append(labelElement, valueElement);
+    if (detail) {
+      const detailElement = document.createElement('span');
+      detailElement.className = 'bse-stat-detail';
+      detailElement.textContent = detail;
+      card.append(detailElement);
+    }
+    return card;
+  }
+
+  // Fills the summary panel beside the chart from the same days the chart shows
+  function renderTrendStats(valid) {
+    const stats = document.querySelector('#bse-week-trend-stats');
+    if (!stats) return;
+    stats.replaceChildren();
+    const days = valid.map((point) => ({
+      day: point.day,
+      row: point.row,
+      close: positiveNumber(point.row, 'closePrice'),
+      high: positiveNumber(point.row, 'highPrice'),
+      low: positiveNumber(point.row, 'lowPrice'),
+      change: dailyChange(point.row)
+    }));
+    const first = days[0];
+    const latest = days[days.length - 1];
+    const highest = days.reduce((best, d) => (d.high > best.high ? d : best), days[0]);
+    const lowest = days.reduce((best, d) => (d.low < best.low ? d : best), days[0]);
+    const average = days.reduce((total, d) => total + d.close, 0) / days.length;
+    const biggestRise = days.reduce((best, d) => (d.change > best.change ? d : best), days[0]);
+    const biggestFall = days.reduce((best, d) => (d.change < best.change ? d : best), days[0]);
+    const upDays = days.filter((d) => d.change >= 0).length;
+    const overall = ((latest.close - first.close) / first.close) * 100;
+    const tone = (value) => (value >= 0 ? 'up' : 'down');
+
+    stats.append(
+      statCard('Latest close', `₹${formatNumber(latest.close)}`, formatTradeDate(latest.day)),
+      statCard('Change on latest day', signed(latest.change), formatTradeDate(latest.day), tone(latest.change)),
+      statCard(`Change over ${days.length} days`, signed(overall), `since ${formatTradeDate(first.day)}`, tone(overall)),
+      statCard('Highest price', `₹${formatNumber(highest.high)}`, formatTradeDate(highest.day)),
+      statCard('Lowest price', `₹${formatNumber(lowest.low)}`, formatTradeDate(lowest.day)),
+      statCard('Average close', `₹${formatNumber(Number(average.toFixed(2)))}`),
+      statCard('Biggest rise', signed(biggestRise.change), formatTradeDate(biggestRise.day), 'up'),
+      statCard('Biggest fall', signed(biggestFall.change), formatTradeDate(biggestFall.day), 'down'),
+      statCard('Up / down days', `${upDays} / ${days.length - upDays}`)
+    );
+  }
+  function positiveNumber(row, field) {
+    const value = Number(row?.[field]);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  // Picks round tick values covering the values, with half a step of space above and below
+  // so labels never touch the axes. includeZero starts the axis at 0 (used for percentages).
+  function niceTicks(values, includeZero) {
+    const extra = includeZero ? [0] : [];
+    const low = Math.min(...extra, ...values);
+    const high = Math.max(...extra, ...values);
+    const rawStep = Math.max(high - low, 0.5) / 4;
+    const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+    const fraction = rawStep / magnitude;
+    const multiple = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
+    const step = Number((multiple * magnitude).toPrecision(6));
+    let start = Math.floor(low / step) * step;
+    let end = Math.ceil(high / step) * step;
+    while (start > low - step / 2) start -= step;
+    while (end < high + step / 2) end += step;
+    const count = Math.round((end - start) / step);
+    const ticks = Array.from({ length: count + 1 }, (_, index) => Number((start + index * step).toPrecision(6)));
+    return { ticks, step };
+  }
+
+  // points: oldest first, each { day: 'YYYY-MM-DD', row: the ETF's BSE row or null }
+  function drawWeekTrend(points) {
+    const chart = document.querySelector('#bse-week-trend-chart');
+    const summary = document.querySelector('#bse-week-trend-summary');
+    if (!chart) return;
+    chart.replaceChildren();
+    const valid = points.filter((point) => point.row);
+    if (valid.length === 0) {
+      chart.textContent = 'No Sensex ETF prices found for these days.';
+      if (summary) summary.textContent = '';
+      return;
+    }
+
+    const allValues = valid.flatMap((point) => TREND_SERIES
+      .map((series) => positiveNumber(point.row, series.field))
+      .filter((value) => value !== null));
+    const { ticks, step } = niceTicks(allValues, false);
+    const low = ticks[0];
+    const high = ticks[ticks.length - 1];
+
+    const sign = (value) => (value > 0 ? '+' : '');
+    const latest = points[points.length - 1];
+    const upDays = valid.filter((point) => dailyChange(point.row) >= 0).length;
+    const summaryText = `Sensex rose on ${upDays} of ${valid.length} days`
+      + (latest.row ? `. Latest (${formatTradeDate(latest.day)}): ${sign(dailyChange(latest.row))}${dailyChange(latest.row).toFixed(2)}%` : '');
+    if (summary) summary.textContent = summaryText;
+
+    const width = 760;
+    const height = 318;
+    const left = 72;
+    const right = 150;
+    const top = 44;
+    const bottom = 100;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const baseline = height - bottom;
+    const x = (index) => left + (points.length === 1 ? plotWidth / 2 : index * plotWidth / (points.length - 1));
+    const y = (value) => top + (high - value) * plotHeight / (high - low);
+
+    const svg = svgElement('svg', {
+      viewBox: `0 0 ${width} ${height}`,
+      class: 'bse-week-trend-svg',
+      role: 'img',
+      'aria-label': `${summaryText}. Open, high, low and close prices of the Sensex-tracking ETF for each day.`
+    });
+
+    svg.append(svgElement('text', {
+      x: left + plotWidth / 2, y: 30, 'text-anchor': 'middle', class: 'chart-title'
+    }, 'BSE SENSEX ETF PRICES · LAST 9 TRADING DAYS'));
+
+    // Solid horizontal grid lines with price labels
+    ticks.forEach((value) => {
+      svg.append(svgElement('line', { x1: left, x2: left + plotWidth, y1: y(value), y2: y(value), class: 'grid' }));
+      svg.append(svgElement('text', {
+        x: left - 10, y: y(value) + 4, 'text-anchor': 'end', class: 'axis'
+      }, formatNumber(value)));
+    });
+
+    // The y-axis and x-axis lines
+    svg.append(svgElement('line', { x1: left, x2: left, y1: top, y2: baseline, class: 'axis-line' }));
+    svg.append(svgElement('line', { x1: left, x2: left + plotWidth, y1: baseline, y2: baseline, class: 'axis-line' }));
+
+    // X-axis title, centred under the dates
+    svg.append(svgElement('text', {
+      x: left + plotWidth / 2, y: height - 8, 'text-anchor': 'middle', class: 'axis-title'
+    }, 'Trading date'));
+    // Y-axis title, written upwards beside the price labels
+    const axisTitleY = top + plotHeight / 2;
+    svg.append(svgElement('text', {
+      x: 16, y: axisTitleY, 'text-anchor': 'middle', class: 'axis-title',
+      transform: `rotate(-90 16 ${axisTitleY})`
+    }, 'Price (₹ per unit)'));
+    // Dates under the x-axis, rotated like the reference chart
+    points.forEach((point, index) => {
+      const xPos = x(index);
+      svg.append(svgElement('line', { x1: xPos, x2: xPos, y1: baseline, y2: baseline + 5, class: 'tick' }));
+      svg.append(svgElement('text', {
+        x: xPos, y: baseline + 14, 'text-anchor': 'end', class: 'axis',
+        transform: `rotate(-45 ${xPos} ${baseline + 14})`
+      }, formatTradeDate(point.day)));
+    });
+
+    // One line per price type, with a dot on each day that has a price
+    TREND_SERIES.forEach((series) => {
+      const coordinates = points
+        .map((point, index) => {
+          const value = positiveNumber(point.row, series.field);
+          return value === null ? null : { x: x(index), y: y(value), value, day: point.day };
+        })
+        .filter(Boolean);
+      if (coordinates.length > 1) {
+        svg.append(svgElement('polyline', {
+          points: coordinates.map((c) => `${c.x},${c.y}`).join(' '),
+          class: 'series',
+          stroke: series.color
+        }));
+      }
+      coordinates.forEach((c) => {
+        const dot = svgElement('circle', { cx: c.x, cy: c.y, r: 3.2, fill: series.color });
+        dot.append(svgElement('title', {}, `${formatTradeDate(c.day)} · ${series.label}: ₹${formatNumber(c.value)}`));
+        svg.append(dot);
+      });
+    });
+
+    // Legend on the right
+    const legendX = left + plotWidth + 26;
+    TREND_SERIES.forEach((series, index) => {
+      const legendY = top + 16 + index * 26;
+      svg.append(svgElement('line', {
+        x1: legendX, x2: legendX + 24, y1: legendY, y2: legendY, class: 'series', stroke: series.color
+      }));
+      svg.append(svgElement('text', { x: legendX + 32, y: legendY + 4, class: 'legend' }, series.label));
+    });
+
+    chart.append(svg);
+    renderTrendStats(valid);
+  }
   // Sensex-tracking ETFs in the BSE Bhav Copy, most liquid first
   const SENSEX_TRACKERS = ['SENSEXBEES', 'SBISENSEX', 'HDFCSENSEX', 'SENSEXBETA'];
 
-  function findSensexTracker(prices) {
+  // The Sensex-tracking ETF row for a day (its open, high, low and close), or null
+  function findSensexRow(prices) {
     for (const symbol of SENSEX_TRACKERS) {
       const row = prices.find((p) => p.symbol?.trim().toUpperCase() === symbol);
-      const close = Number(row?.closePrice);
-      const prev = Number(row?.previousClose);
-      if (row && Number.isFinite(close) && Number.isFinite(prev) && close > 0 && prev > 0) {
-        return {
-          symbol, name: row.companyName || symbol, close, prev,
-          pct: ((close - prev) / prev) * 100
-        };
+      if (row && positiveNumber(row, 'closePrice') !== null && positiveNumber(row, 'previousClose') !== null) {
+        return row;
       }
     }
     return null;
   }
 
+  function findSensexTracker(prices) {
+    const row = findSensexRow(prices);
+    if (!row) return null;
+    const close = Number(row.closePrice);
+    const prev = Number(row.previousClose);
+    const symbol = row.symbol.trim().toUpperCase();
+    return {
+      symbol, name: row.companyName || symbol, close, prev,
+      pct: ((close - prev) / prev) * 100
+    };
+  }
   function renderBsePrices() {
     const query = bseDataSearch.value.trim().toLocaleLowerCase();
     const prices = query
