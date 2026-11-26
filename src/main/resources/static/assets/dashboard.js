@@ -1,7 +1,7 @@
 (() => {
   const {
-    api, getCsrf, withBusy, setupAccountBar, formatCurrency, formatNumber,
-    toIsoDateString, formatTradeDate, loadQuotes, quoteFor, portfolioDetailsUrl
+    api, getCsrf, withBusy, setupAccountBar, formatNumber,
+    toIsoDateString, formatTradeDate, portfolioDetailsUrl
   } = window.Folio;
 
   const portfolioList = document.querySelector('#portfolio-list');
@@ -18,8 +18,6 @@
   const bseDateSelect = document.querySelector('#bse-date-select');
   let selectedTradeDate = null;
   let portfolios = [];
-  let details = new Map();
-  let quotesByKey = new Map();
   let selectedPortfolioId = null;
   let allBsePrices = [];
 
@@ -60,11 +58,8 @@
     try {
       await setupAccountBar(showMessage);
       portfolios = await api('api/portfolios');
-      const loadedDetails = await Promise.all(portfolios.map((portfolio) => api(`api/portfolios/${portfolio.portfolioId}`)));
-      details = new Map(portfolios.map((portfolio, index) => [portfolio.portfolioId, loadedDetails[index]]));
-      await Promise.allSettled([loadMarketPrices(), loadBseDateData()]);
+      await loadBseDateData();
       renderPortfolios();
-      updateSummary();
       if (portfolios.length) selectPortfolio(portfolios[0].portfolioId);
     } catch (error) {
       showMessage(error.message || 'We could not load your portfolio. Refresh the page to try again.');
@@ -85,11 +80,9 @@
           body: JSON.stringify({ name: createName.value.trim() })
         });
         portfolios.push(created);
-        details.set(created.portfolioId, await api(`api/portfolios/${created.portfolioId}`));
         createName.value = '';
         createForm.hidden = true;
         selectPortfolio(created.portfolioId);
-        updateSummary();
         showMessage('Your portfolio is ready. Click its box below to add investments.', 'success');
       } catch (error) {
         showMessage(error.message || 'We could not create that portfolio. Please try again.');
@@ -156,39 +149,6 @@
   function selectPortfolio(portfolioId) {
     selectedPortfolioId = portfolioId;
     renderPortfolios();
-  }
-
-  function updateSummary() {
-    let holdingCount = 0;
-    let costBasis = 0;
-    let marketValue = 0;
-    let pricedCount = 0;
-    details.forEach((detail) => detail.holdings.forEach((holding) => {
-      holdingCount += 1;
-      costBasis += Number(holding.costBasis) || 0;
-      const quote = quoteFor(quotesByKey, holding);
-      if (quote) {
-        marketValue += Number(quote.closePrice) * Number(holding.unitsOwned);
-        pricedCount += 1;
-      }
-    }));
-    document.querySelector('#portfolio-count').textContent = String(portfolios.length);
-    document.querySelector('#holding-count').textContent = String(holdingCount);
-    document.querySelector('#cost-basis').textContent = formatCurrency(costBasis);
-    document.querySelector('#market-value').textContent = holdingCount === 0
-      ? '—'
-      : pricedCount === holdingCount ? formatCurrency(marketValue) : '—';
-    document.querySelector('#market-value-caption').textContent = holdingCount === 0
-      ? 'Add holdings with BSE symbols to get started'
-      : pricedCount === holdingCount ? 'Latest BSE closing price × units owned' : `${pricedCount} of ${holdingCount} holdings matched to BSE prices`;
-  }
-
-  async function loadMarketPrices() {
-    try {
-      quotesByKey = await loadQuotes([...details.values()].flatMap((detail) => detail.holdings));
-    } catch (error) {
-      quotesByKey = new Map();
-    }
   }
 
   async function loadBseDateData(preferredDate) {

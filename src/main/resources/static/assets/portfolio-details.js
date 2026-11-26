@@ -64,6 +64,7 @@
       await setupAccountBar(showPageMessage);
       portfolios = await api('api/portfolios');
       if (!portfolios.length) {
+        updateSummary();
         noPortfolios.hidden = false;
         portfolioSelect.closest('.portfolio-select-wrap').hidden = true;
         return;
@@ -108,6 +109,38 @@
     if (portfolioId !== selectedPortfolioId) return; // user switched again meanwhile
     renderHoldings();
     resetSoldFilter();
+    updateSummary();
+  }
+
+  // Totals across all of the user's portfolios, shown in the summary boxes
+  async function updateSummary() {
+    try {
+      const allDetails = await Promise.all(portfolios.map((p) => api(`api/portfolios/${p.portfolioId}`)));
+      const holdings = allDetails.flatMap((d) => d.holdings);
+      const quotes = await loadQuotes(holdings).catch(() => new Map());
+      let costBasis = 0;
+      let marketValue = 0;
+      let pricedCount = 0;
+      holdings.forEach((holding) => {
+        costBasis += Number(holding.costBasis) || 0;
+        const quote = quoteFor(quotes, holding);
+        if (quote) {
+          marketValue += Number(quote.closePrice) * Number(holding.unitsOwned);
+          pricedCount += 1;
+        }
+      });
+      const holdingCount = holdings.length;
+      const allPriced = holdingCount > 0 && pricedCount === holdingCount;
+      document.querySelector('#portfolio-count').textContent = String(portfolios.length);
+      document.querySelector('#holding-count').textContent = String(holdingCount);
+      document.querySelector('#cost-basis').textContent = formatCurrency(costBasis);
+      document.querySelector('#market-value').textContent = allPriced ? formatCurrency(marketValue) : '—';
+      document.querySelector('#market-value-caption').textContent = holdingCount === 0
+        ? 'Add holdings with BSE symbols to get started'
+        : allPriced ? 'Latest BSE closing price × units owned' : `${pricedCount} of ${holdingCount} holdings matched to BSE prices`;
+    } catch (error) {
+      document.querySelector('#market-value-caption').textContent = 'Summary unavailable; refresh to try again.';
+    }
   }
 
   async function reloadPortfolio() {
@@ -164,6 +197,7 @@
         configureInvestmentNameFields();
         await reloadPortfolio();
         renderHoldings();
+        updateSummary();
         holdingMessage.textContent = 'Investment added to your portfolio.';
         holdingMessage.className = 'dashboard-message success';
       } catch (error) {
@@ -465,6 +499,7 @@
       await reloadPortfolio();
       renderHoldings();
       resetSoldFilter();
+      updateSummary();
 
       if (isPartial && unitsToSell < max) {
         const remaining = max - unitsToSell;
